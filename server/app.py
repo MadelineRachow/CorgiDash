@@ -56,6 +56,10 @@ class ConnectionManager:
         if user_id in self.active_connections:
             await self.active_connections[user_id].send_text(message)
 
+    async def broadcast_message(self, message: str):
+        for websocket in self.active_connections.values():
+            await websocket.send_text(message)
+
 manager = ConnectionManager()
 
 @app.websocket("/ws/connect")
@@ -67,6 +71,7 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
         # Decode and verify the JWT token
         auth_payload = authenticate_websocket_jwt(token)
         user_id = auth_payload.get("sub")
+        user_email = auth_payload.get("email") # Get user
         
         # Add user to the active connection dictionary
         await manager.connect(user_id, websocket)
@@ -76,7 +81,7 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
         while True:
             data = await websocket.receive_text()
             print(f"User {user_id} sent: {data}")
-            await manager.send_personal_message(f"Server: {data}", user_id)
+            await manager.broadcast_message(f"{user_email}: {data}")
     
     # If JWT fails validation, raise 1008 Policy Violation error
     except HTTPException as e:

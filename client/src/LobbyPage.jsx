@@ -1,6 +1,7 @@
 import {useEffect, useState, useRef} from 'react';
 
 function LobbyPage({supabase}) { 
+    const [userEmail, setUserEmail] = useState('');
     const [messages, setMessages] = useState([]);
     const [inputMessage, setInputMessage] = useState('');
     const [connectionStatus, setConnectionStatus] = useState('Connecting...');
@@ -28,6 +29,7 @@ function LobbyPage({supabase}) {
             };
 
             // Extract the JWT token for authentication the WebSocket connection
+            setUserEmail(session.user.email);
             const authToken = session.access_token;
             const socketUrl = `${WEBSOCKET_URL}?token=${authToken}`;
             ws.current = new WebSocket(socketUrl);
@@ -74,7 +76,6 @@ function LobbyPage({supabase}) {
         if (ws.current?.readyState === WebSocket.OPEN) {
             const messageToSend = inputMessage;
             ws.current.send(messageToSend);
-            addMessage(`Client: ${messageToSend}`); // Add message to local chat log
             setInputMessage('');
         };
     };
