@@ -87,7 +87,7 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
                 message = json.loads(data)
                 if message.get("type") == "move":
                     email = message.get("email")
-                    x = message.get("x", 0.0) # Temporary 0.0 bc we're not doing that yet
+                    x = message.get("x", 0.03) # Temporary 0.0 bc we're not doing that yet
                     y = message.get("y")
                     if email is not None and x is not None and y is not None:
                         player_positions[email] = {"x": x, "y": y}
