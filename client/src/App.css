@@ -2,3 +2,24 @@ html, body {
   margin: 0;
   padding: 0;
 }
+
+/* .gamePage {
+
+} */
+
+.gamePlayableArea {
+  position: relative;
+  width: 99.5vw;
+  height: 99vh;
+  border: 1px solid; /* Temporary, plan to remove later */
+}
+
+.playerModel {
+  position: absolute;
+}
+
+.playerSprite {
+  width: 10px;
+  height: 10px;
+  background-color: black;
+}

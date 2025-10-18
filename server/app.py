@@ -13,7 +13,7 @@ SUPABASE_AUDIENCE = "authenticated"
 app = FastAPI()
 player_positions = {}
 
-def authenticate_websocket_jwt(token):
+def authenticate_websocket_jwt(token: str) -> dict:
     try:
         # Decode and verify the JWT token
         payload = jwt.decode(token, SUPABASE_JWT_SECRET, algorithms=["HS256"], audience=SUPABASE_AUDIENCE)
@@ -39,33 +39,33 @@ def authenticate_websocket_jwt(token):
 class ConnectionManager:
     def __init__(self):
         # Dictionary to keep track of active WebSocket connections
-        self.active_connections = {}
+        self.active_connections: dict[str, WebSocket] = {}
 
     # Accepts incoming Websocket connection and associates it with a User ID
-    async def connect(self, user_id, websocket):
+    async def connect(self, user_id: str, websocket: WebSocket):
         await websocket.accept()
         self.active_connections[user_id] = websocket
         print(f"[User joined] Active connections: {len(self.active_connections)}")
 
     # Removes user from active connections dictionary when they disconnect
-    def disconnect(self, user_id):
+    def disconnect(self, user_id: str):
         if user_id in self.active_connections:
             del self.active_connections[user_id]
         print(f"[User disconnected] Active connections: {len(self.active_connections)}")
 
     # Sends message to one specific user
-    async def send_personal_message(self, message, user_id):
+    async def send_personal_message(self, message: str, user_id: str):
         if user_id in self.active_connections:
             await self.active_connections[user_id].send_text(message)
 
-    async def broadcast_message(self, message):
+    async def broadcast_message(self, message: str):
         for websocket in self.active_connections.values():
             await websocket.send_text(message)
 
 manager = ConnectionManager()
 
 @app.websocket("/ws/connect")
-async def websocket_endpoint(websocket, token):
+async def websocket_endpoint(websocket: WebSocket, token: str):
     # Fallback User ID if authentication fails
     user_id = "unauthenticated" 
     
@@ -93,7 +93,7 @@ async def websocket_endpoint(websocket, token):
                         player_positions[email] = {"x": x, "y": y}
                     # print(f"player positions: {player_positions}")
                     state_message = json.dumps({"type": "state_update", "players": player_positions})
-                    # print(f"state update: {state_message}")
+                    print(f"state update: {state_message}")
                     await manager.broadcast_message(state_message)
             except json.JSONDecodeError:
                 print("Received invalid JSON")
@@ -107,7 +107,7 @@ async def websocket_endpoint(websocket, token):
     # Remove user from active connection dictionary upon disconnect
     except WebSocketDisconnect:
         manager.disconnect(user_id)
-        player_positions.pop(email, None)
+        player_positions.pop(user_email, None)
         state_message = json.dumps({"type": "state_update", "players": player_positions})
         await manager.broadcast_message(state_message)
         print(f"User {user_id} disconnected.")

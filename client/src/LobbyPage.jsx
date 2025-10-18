@@ -1,4 +1,5 @@
 import {useEffect, useState, useRef} from 'react';
+import "./App.css";
 
 function LobbyPage({supabase}) { 
     const [userEmail, setUserEmail] = useState('');
@@ -96,14 +97,14 @@ function LobbyPage({supabase}) {
     // }, [players]);
 
     return (
-        <div style={{position: 'relative', width: '99.5vw', height: '99vh', border: '1px solid',}}>
+        <div className="gamePlayableArea">
             <h2>Lobby</h2>
             <p>Status: {connectionStatus}</p>
             <div>
                 {Object.entries(players).map(([email, pos]) => (
-                    <div key={email} style={{position: 'absolute', left: `${pos.x * 100}%`, top: `${pos.y * 100}%`}}>
+                    <div key={email} className="playerModel" style={{left: `${pos.x * 100}%`, top: `${pos.y * 100}%`}}>
                         <div>{email}</div>
-                        <div style={{width: '10px', height: '10px', backgroundColor: 'black'}} />
+                        <div className="playerSprite"/>
                     </div>
                 ))}
             </div>
