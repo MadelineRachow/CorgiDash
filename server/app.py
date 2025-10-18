@@ -3,6 +3,7 @@ import uvicorn
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Depends, HTTPException
 from jose import jwt, JWTError
 from dotenv import load_dotenv
+import json
 
 load_dotenv()
 SUPABASE_JWT_SECRET = os.getenv("SUPABASE_JWT_SECRET", "YOUR_SUPABASE_JWT_SECRET_HERE") 
@@ -10,8 +11,9 @@ SUPABASE_URL = os.getenv("SUPABASE_URL", "YOUR_SUPABASE_URL_HERE")
 SUPABASE_AUDIENCE = "authenticated" 
 
 app = FastAPI()
+player_positions = {}
 
-def authenticate_websocket_jwt(token: str) -> dict:
+def authenticate_websocket_jwt(token):
     try:
         # Decode and verify the JWT token
         payload = jwt.decode(token, SUPABASE_JWT_SECRET, algorithms=["HS256"], audience=SUPABASE_AUDIENCE)
@@ -37,33 +39,33 @@ def authenticate_websocket_jwt(token: str) -> dict:
 class ConnectionManager:
     def __init__(self):
         # Dictionary to keep track of active WebSocket connections
-        self.active_connections: dict[str, WebSocket] = {}
+        self.active_connections = {}
 
     # Accepts incoming Websocket connection and associates it with a User ID
-    async def connect(self, user_id: str, websocket: WebSocket):
+    async def connect(self, user_id, websocket):
         await websocket.accept()
         self.active_connections[user_id] = websocket
         print(f"[User joined] Active connections: {len(self.active_connections)}")
 
     # Removes user from active connections dictionary when they disconnect
-    def disconnect(self, user_id: str):
+    def disconnect(self, user_id):
         if user_id in self.active_connections:
             del self.active_connections[user_id]
         print(f"[User disconnected] Active connections: {len(self.active_connections)}")
 
     # Sends message to one specific user
-    async def send_personal_message(self, message: str, user_id: str):
+    async def send_personal_message(self, message, user_id):
         if user_id in self.active_connections:
             await self.active_connections[user_id].send_text(message)
 
-    async def broadcast_message(self, message: str):
+    async def broadcast_message(self, message):
         for websocket in self.active_connections.values():
             await websocket.send_text(message)
 
 manager = ConnectionManager()
 
 @app.websocket("/ws/connect")
-async def websocket_endpoint(websocket: WebSocket, token: str):
+async def websocket_endpoint(websocket, token):
     # Fallback User ID if authentication fails
     user_id = "unauthenticated" 
     
@@ -75,13 +77,26 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
         
         # Add user to the active connection dictionary
         await manager.connect(user_id, websocket)
-        await manager.send_personal_message(f"Connection established. User ID: {user_id}", user_id)
+        await manager.send_personal_message(json.dumps({"type": "connection", "message": f"Connection established. User ID: {user_id}"}), user_id)
 
         # Infinite loop to listen for incoming messages
         while True:
             data = await websocket.receive_text()
-            print(f"User {user_id} sent: {data}")
-            await manager.broadcast_message(f"{user_email}: {data}")
+            # print(f"Received from client: {data}")
+            try: 
+                message = json.loads(data)
+                if message.get("type") == "move":
+                    email = message.get("email")
+                    x = message.get("x", 0.0) # Temporary 0.0 bc we're not doing that yet
+                    y = message.get("y")
+                    if email is not None and x is not None and y is not None:
+                        player_positions[email] = {"x": x, "y": y}
+                    # print(f"player positions: {player_positions}")
+                    state_message = json.dumps({"type": "state_update", "players": player_positions})
+                    # print(f"state update: {state_message}")
+                    await manager.broadcast_message(state_message)
+            except json.JSONDecodeError:
+                print("Received invalid JSON")
     
     # If JWT fails validation, raise 1008 Policy Violation error
     except HTTPException as e:
@@ -92,6 +107,9 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
     # Remove user from active connection dictionary upon disconnect
     except WebSocketDisconnect:
         manager.disconnect(user_id)
+        player_positions.pop(email, None)
+        state_message = json.dumps({"type": "state_update", "players": player_positions})
+        await manager.broadcast_message(state_message)
         print(f"User {user_id} disconnected.")
     
     # Catches any unexpected errors

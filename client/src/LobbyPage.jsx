@@ -2,17 +2,14 @@ import {useEffect, useState, useRef} from 'react';
 
 function LobbyPage({supabase}) { 
     const [userEmail, setUserEmail] = useState('');
-    const [messages, setMessages] = useState([]);
-    const [inputMessage, setInputMessage] = useState('');
     const [connectionStatus, setConnectionStatus] = useState('Connecting...');
+    const [y, setY] = useState(0.5);
+    const [players, setPlayers] = useState([]);
     const ws = useRef(null);
 
     // const WEBSOCKET_URL = "wss://NGROK_URL/ws/connect"; // To use later to test multiplayer functionality
     const WEBSOCKET_URL = "ws://localhost:8000/ws/connect";
-
-    const addMessage = (text) => {
-        setMessages((prev) => [...prev, text]);
-    };
+    const MOVE_PERCENT = 0.02;
 
     useEffect(() => {
         // Flag to prevent state updates after component unmount
@@ -21,15 +18,14 @@ function LobbyPage({supabase}) {
         // Get current user session (to get auth token)
         const connectWebSocket = async() => {
             const {data: {session}} = await supabase.auth.getSession();
-
-            // If no session found, update status and exit
-            if (!session) {
+            if (!session) { // If no session found, update status and exit
                 setConnectionStatus('No session found.');
                 return;
             };
 
             // Extract the JWT token for authentication the WebSocket connection
-            setUserEmail(session.user.email);
+            const email = session.user.email
+            setUserEmail(email);
             const authToken = session.access_token;
             const socketUrl = `${WEBSOCKET_URL}?token=${authToken}`;
             ws.current = new WebSocket(socketUrl);
@@ -38,18 +34,25 @@ function LobbyPage({supabase}) {
             ws.current.onopen = () => {
                 if (!isMounted) return;
                 setConnectionStatus('Connected!');
+                const message = {type: "move", email: email, y: 0.5};
+                if (ws.current?.readyState === WebSocket.OPEN) {
+                    ws.current.send(JSON.stringify(message))
+                };
             };
 
             // Websocket message event handler (receives messages from server)
             ws.current.onmessage = (event) => {
                 if (!isMounted) return;
-                addMessage(event.data);
+                const message = JSON.parse(event.data);
+                if (message.type === "state_update") {
+                    setPlayers(message.players);
+                };
             };
 
             // Websocket close event handler (provide disconnect info)
             ws.current.onclose = (event) => {
                 if (!isMounted) return;
-                setConnectionStatus(`Disconnected. Code: ${event.code}. Reason: ${event.reason || 'Unknown reason'}`);
+                setConnectionStatus(`Disconnected. Code: ${event.code}`);
             };
 
             // Websocket error event handler
@@ -71,30 +74,38 @@ function LobbyPage({supabase}) {
         };
     }, [supabase]);
 
-    // Send message if WebSocket is connected
-    const sendMessage = () => {
-        if (ws.current?.readyState === WebSocket.OPEN) {
-            const messageToSend = inputMessage;
-            ws.current.send(messageToSend);
-            setInputMessage('');
+    useEffect(() => {
+        const handleMovement = (e) => {
+            let newY = y;
+            if (e.key === "ArrowUp" || e.key === "w") {newY = Math.max(0.05, y - MOVE_PERCENT)
+            } else if (e.key === "ArrowDown" || e.key === "s") {newY = Math.min(0.95, y + MOVE_PERCENT)
+            } else {return};
+
+            setY(newY);
+            const message = {type: "move", email: userEmail, y: newY};
+            if (ws.current?.readyState === WebSocket.OPEN) {
+                ws.current.send(JSON.stringify(message))
+            };
         };
-    };
+        window.addEventListener("keydown", handleMovement);
+        return () => window.removeEventListener("keydown", handleMovement);
+    }, [userEmail, y]);
+
+    // useEffect(() => {
+    //     console.log("Updated state:", players);
+    // }, [players]);
 
     return (
-        <div>
+        <div style={{position: 'relative', width: '99.5vw', height: '99vh', border: '1px solid',}}>
             <h2>Lobby</h2>
             <p>Status: {connectionStatus}</p>
             <div>
-                <input
-                    type="text"
-                    value={inputMessage}
-                    onChange={(e) => setInputMessage(e.target.value)}
-                    placeholder="Enter a message to echo"
-                />
-                <button onClick={sendMessage}>Send to server</button>
-            </div>
-            <div>
-                {messages.map((msg, index) => (<div key={index}>{msg}</div>))}
+                {Object.entries(players).map(([email, pos]) => (
+                    <div key={email} style={{position: 'absolute', left: `${pos.x * 100}%`, top: `${pos.y * 100}%`}}>
+                        <div>{email}</div>
+                        <div style={{width: '10px', height: '10px', backgroundColor: 'black'}} />
+                    </div>
+                ))}
             </div>
         </div>
     );

@@ -3,6 +3,7 @@ import {BrowserRouter as Router, Routes, Route, Navigate} from 'react-router-dom
 import {useState, useEffect} from "react";
 import LoginPage from "./LoginPage";
 import LobbyPage from "./LobbyPage";
+import './App.css';
 
 const supabaseURL = process.env.REACT_APP_SUPABASE_URL;
 const supabaseAnonKey = process.env.REACT_APP_SUPABASE_ANON_KEY;
