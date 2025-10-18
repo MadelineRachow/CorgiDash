@@ -4,13 +4,13 @@ import "./App.css";
 function LobbyPage({supabase}) { 
     const [userEmail, setUserEmail] = useState('');
     const [connectionStatus, setConnectionStatus] = useState('Connecting...');
-    const [y, setY] = useState(0.5);
+    const [y, setY] = useState(0.75);
     const [players, setPlayers] = useState([]);
     const ws = useRef(null);
 
     // const WEBSOCKET_URL = "wss://NGROK_URL/ws/connect"; // To use later to test multiplayer functionality
     const WEBSOCKET_URL = "ws://localhost:8000/ws/connect";
-    const MOVE_PERCENT = 0.02;
+    const MOVE_PERCENT = 0.01;
 
     useEffect(() => {
         // Flag to prevent state updates after component unmount
@@ -35,7 +35,7 @@ function LobbyPage({supabase}) {
             ws.current.onopen = () => {
                 if (!isMounted) return;
                 setConnectionStatus('Connected!');
-                const message = {type: "move", email: email, y: 0.5};
+                const message = {type: "move", email: email, y: 0.75};
                 if (ws.current?.readyState === WebSocket.OPEN) {
                     ws.current.send(JSON.stringify(message))
                 };
@@ -78,8 +78,8 @@ function LobbyPage({supabase}) {
     useEffect(() => {
         const handleMovement = (e) => {
             let newY = y;
-            if (e.key === "ArrowUp" || e.key === "w") {newY = Math.max(0.05, y - MOVE_PERCENT)
-            } else if (e.key === "ArrowDown" || e.key === "s") {newY = Math.min(0.95, y + MOVE_PERCENT)
+            if (e.key === "ArrowUp" || e.key === "w") {newY = Math.max(0.69, y - MOVE_PERCENT)
+            } else if (e.key === "ArrowDown" || e.key === "s") {newY = Math.min(0.84, y + MOVE_PERCENT)
             } else {return};
 
             setY(newY);
@@ -97,16 +97,18 @@ function LobbyPage({supabase}) {
     // }, [players]);
 
     return (
-        <div className="gamePlayableArea">
-            <h2>Lobby</h2>
-            <p>Status: {connectionStatus}</p>
-            <div>
-                {Object.entries(players).map(([email, pos]) => (
-                    <div key={email} className="playerModel" style={{left: `${pos.x * 100}%`, top: `${pos.y * 100}%`}}>
-                        <div>{email}</div>
-                        <div className="playerSprite"/>
-                    </div>
-                ))}
+        <div className="gameBackground">
+            <div className="gamePlayableArea">
+                <h2>Lobby</h2>
+                <p>Status: {connectionStatus}</p>
+                <div>
+                    {Object.entries(players).map(([email, pos]) => (
+                        <div key={email} className="playerModel" style={{left: `${pos.x * 100}%`, top: `${pos.y * 100}%`}}>
+                            <div>{email}</div>
+                            <div className="playerSprite"/>
+                        </div>
+                    ))}
+                </div>
             </div>
         </div>
     );

@@ -1,25 +1,50 @@
 html, body {
   margin: 0;
   padding: 0;
+  overflow: hidden;
 }
 
-/* .gamePage {
-
-} */
+.gameBackground {
+  background-image: url('D:/CS PROJECTS/CorgiDash/client/src/assets/game_background.jpg');
+  background-repeat: no-repeat;
+  background-size: cover;
+  height: 100vh;
+}
 
 .gamePlayableArea {
   position: relative;
-  width: 99.5vw;
+  width: 99vw;
   height: 99vh;
-  border: 1px solid; /* Temporary, plan to remove later */
+}
+
+.gamePlayableArea h2 {
+  margin: 0;
+  padding: 0;
 }
 
 .playerModel {
-  position: absolute;
+  position: fixed;
+  top: 100px;
+  width: 64px;
+  height: 64px;
+  z-index: 10;
 }
 
 .playerSprite {
-  width: 10px;
-  height: 10px;
-  background-color: black;
+  width: 64px;
+  height: 64px;
+  background-image: url('D:/CS PROJECTS/CorgiDash/client/src/assets/corgi_walk/corgi_tri_no_tail_walk.png');
+  background-repeat: no-repeat;
+  animation: walkCycle 0.75s steps(5) infinite;
+  transform: scale(4);
+  image-rendering: pixelated;
+}
+
+@keyframes walkCycle {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: -320px 0;
+  }
 }
