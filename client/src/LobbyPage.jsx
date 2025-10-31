@@ -48,7 +48,9 @@ function PlayerCanvas({players, spriteType, y, setY, ws, userEmail}) {
             ctx.drawImage(backgroundRef.current, 0, 0, backgroundRef.current.width / 2, backgroundRef.current.height, 0, 0, WORLD_WIDTH, WORLD_HEIGHT);
 
             // Handle animation frames on timed interval (FRAME_DURATION)
-            if (!lastFrameUpdateRef.current) lastFrameUpdateRef.current = timestamp;
+            if (!lastFrameUpdateRef.current) {
+                lastFrameUpdateRef.current = timestamp;
+            }
             const elapsed = timestamp - lastFrameUpdateRef.current;
             if (elapsed > FRAME_DURATION) {
                 frameRef.current = (frameRef.current + 1) % sprites[spriteType].frames;
