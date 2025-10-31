@@ -3,6 +3,7 @@ import {BrowserRouter as Router, Routes, Route, Navigate} from 'react-router-dom
 import {useState, useEffect} from "react";
 import LoginPage from "./LoginPage";
 import LobbyPage from "./LobbyPage";
+import GamePage from "./GamePage";
 import './App.css';
 
 const supabaseURL = process.env.REACT_APP_SUPABASE_URL;
@@ -47,7 +48,8 @@ function App() {
         <Router>
             <Routes>
                 <Route path="/login" element={user ? <Navigate to="/lobby" replace/> : <LoginPage supabase={supabase}/>}/>
-                <Route path="/lobby" element={<ProtectedRoute user={user}><LobbyPage supabase={supabase}/></ProtectedRoute>}/>
+                <Route path="/lobby" element={<ProtectedRoute user={user}><LobbyPage/></ProtectedRoute>}/>
+                <Route path="/game" element={<ProtectedRoute user={user}><GamePage supabase={supabase}/></ProtectedRoute>}/>
                 <Route path="*" element={<Navigate to={user ? "/lobby" : "/login"} replace/>}/>
             </Routes>
         </Router>
