@@ -1,7 +1,7 @@
 import {useEffect, useState, useRef} from 'react';
 import "./App.css";
 
-function PlayerCanvas({players, spriteType, y, setY, ws, userEmail}) {
+function PlayerCanvas({players, spriteType, y, setY, ws, userEmail, username}) {
     const canvasRef = useRef(null);
     const frameRef = useRef(0);
     const lastFrameUpdateRef = useRef(0);
@@ -76,8 +76,9 @@ function PlayerCanvas({players, spriteType, y, setY, ws, userEmail}) {
                     spriteSize * spriteScale, spriteSize * spriteScale // Destination width and height
                 );
 
-                // Draw player email above sprite
-                ctx.fillText(email, px, py - (spriteSize * spriteScale) / 2 - 4);
+                // Draw player username/email above sprite
+                ctx.fillText(username, px, py - (spriteSize * spriteScale) / 2 - 4);
+                // ctx.fillText(email, px, py - (spriteSize * spriteScale) / 2 - 4);
             });
             // Request the next animation frame
             animationId = requestAnimationFrame(draw);
@@ -124,6 +125,7 @@ function PlayerCanvas({players, spriteType, y, setY, ws, userEmail}) {
 
 function GamePage({supabase}) { 
     const [userEmail, setUserEmail] = useState('');
+    const [username, setUsername] = useState('');
     const [connectionStatus, setConnectionStatus] = useState('Connecting...');
     const [y, setY] = useState(0.81);
     const [players, setPlayers] = useState([]);
@@ -147,7 +149,9 @@ function GamePage({supabase}) {
 
             // Extract the JWT token for authentication the WebSocket connection
             const email = session.user.email
+            const username = session.user.user_metadata.username;
             setUserEmail(email);
+            setUsername(username);
             const authToken = session.access_token;
             const socketUrl = `${WEBSOCKET_URL}?token=${authToken}`;
             ws.current = new WebSocket(socketUrl);
@@ -200,7 +204,7 @@ function GamePage({supabase}) {
         <div>
             {/* <h2>Lobby</h2>
             <p>Status: {connectionStatus}</p> */}
-            <PlayerCanvas players={players} spriteType="walk" y={y} setY={setY} ws={ws} userEmail={userEmail}/>
+            <PlayerCanvas players={players} spriteType="walk" y={y} setY={setY} ws={ws} userEmail={userEmail} username={username}/>
         </div>
     )
 };

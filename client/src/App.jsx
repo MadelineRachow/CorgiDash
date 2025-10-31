@@ -1,7 +1,7 @@
 import {createClient} from "@supabase/supabase-js";
 import {BrowserRouter as Router, Routes, Route, Navigate} from 'react-router-dom';
 import {useState, useEffect} from "react";
-import LoginPage from "./LoginPage";
+import {LoginPage, CreateAccountPage, ForgotPasswordPage, ResetPasswordPage} from "./LoginPage";
 import LobbyPage from "./LobbyPage";
 import GamePage from "./GamePage";
 import './App.css';
@@ -48,7 +48,10 @@ function App() {
         <Router>
             <Routes>
                 <Route path="/login" element={user ? <Navigate to="/lobby" replace/> : <LoginPage supabase={supabase}/>}/>
-                <Route path="/lobby" element={<ProtectedRoute user={user}><LobbyPage/></ProtectedRoute>}/>
+                <Route path="/createaccount" element={user ? <Navigate to="/lobby" replace/> : <CreateAccountPage supabase={supabase}/>}/>
+                <Route path="/forgotpassword" element={user ? <Navigate to="/lobby" replace/> : <ForgotPasswordPage supabase={supabase}/>}/>
+                <Route path="/resetpassword" element={<ResetPasswordPage supabase={supabase} />} />
+                <Route path="/lobby" element={<ProtectedRoute user={user}><LobbyPage supabase={supabase}/></ProtectedRoute>}/>
                 <Route path="/game" element={<ProtectedRoute user={user}><GamePage supabase={supabase}/></ProtectedRoute>}/>
                 <Route path="*" element={<Navigate to={user ? "/lobby" : "/login"} replace/>}/>
             </Routes>
