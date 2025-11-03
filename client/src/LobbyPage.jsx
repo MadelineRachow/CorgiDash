@@ -20,6 +20,10 @@ function LobbyPage({supabase}) {
     function joinGameButton() {
         navigate("/game");
     };
+
+    function helpPageButton() {
+        navigate("/help");
+    };
     
     const signOutButton = async() => {
         const {error} = await supabase.auth.signOut();
@@ -29,9 +33,9 @@ function LobbyPage({supabase}) {
     
     return (
         <div>
-            <p>This is the lobby page</p>
-            <p>Username: {username}</p>
+            <h3>Username: {username}</h3>
             <button onClick={joinGameButton}>Join Game</button>
+            <button onClick={helpPageButton}>Help information page</button>
             <button onClick={signOutButton}>Sign out</button>
         </div>
     )

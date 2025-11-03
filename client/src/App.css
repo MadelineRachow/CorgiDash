@@ -4,6 +4,18 @@ html, body, #root {
   overflow: hidden;
 }
 
+h1 {
+  font-size: 32px;
+}
+
+h3 {
+  font-size: 22px;
+}
+
+p, li, button, input {
+  font-size: 18px;
+}
+
 /* .gameBackground {
   background-image: url('D:/CS PROJECTS/CorgiDash/client/src/assets/game_background.jpg');
   background-repeat: no-repeat;

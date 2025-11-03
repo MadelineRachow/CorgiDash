@@ -4,6 +4,7 @@ import {useState, useEffect} from "react";
 import {LoginPage, CreateAccountPage, ForgotPasswordPage, ResetPasswordPage} from "./LoginPage";
 import LobbyPage from "./LobbyPage";
 import GamePage from "./GamePage";
+import HelpPage from "./HelpPage";
 import './App.css';
 
 const supabaseURL = process.env.REACT_APP_SUPABASE_URL;
@@ -46,6 +47,7 @@ function App() {
     // If user is logged in, redirect the to lobby (Otherwise, show the login page)
     return (
         <Router>
+            <h1>CorgiDash</h1>
             <Routes>
                 <Route path="/login" element={user ? <Navigate to="/lobby" replace/> : <LoginPage supabase={supabase}/>}/>
                 <Route path="/createaccount" element={user ? <Navigate to="/lobby" replace/> : <CreateAccountPage supabase={supabase}/>}/>
@@ -53,8 +55,10 @@ function App() {
                 <Route path="/resetpassword" element={<ResetPasswordPage supabase={supabase} />} />
                 <Route path="/lobby" element={<ProtectedRoute user={user}><LobbyPage supabase={supabase}/></ProtectedRoute>}/>
                 <Route path="/game" element={<ProtectedRoute user={user}><GamePage supabase={supabase}/></ProtectedRoute>}/>
+                <Route path="/help" element={<ProtectedRoute user={user}><HelpPage/></ProtectedRoute>}/>
                 <Route path="*" element={<Navigate to={user ? "/lobby" : "/login"} replace/>}/>
             </Routes>
+            <p>@ Madeline Rachow 2025</p>
         </Router>
     )
 };

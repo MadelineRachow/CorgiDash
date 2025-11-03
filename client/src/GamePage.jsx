@@ -1,4 +1,5 @@
 import {useEffect, useState, useRef} from 'react';
+import {useNavigate} from 'react-router-dom';
 import "./App.css";
 
 function PlayerCanvas({players, spriteType, y, setY, ws, userEmail, username}) {
@@ -58,7 +59,7 @@ function PlayerCanvas({players, spriteType, y, setY, ws, userEmail, username}) {
             }
 
             // Text settings for player email
-            ctx.font = "14px Arial";
+            ctx.font = "20px Arial";
             ctx.fillStyle = "black";
             ctx.textAlign = "center";
 
@@ -114,10 +115,10 @@ function PlayerCanvas({players, spriteType, y, setY, ws, userEmail, username}) {
 
     // Render the canvas
     return (
-        <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh", width: "100vw" }}>
+        <div style={{height: "80vh", width: "70vw"}}>
             <canvas
                 ref={canvasRef}
-                style={{ display: "block", border: "5px solid black", imageRendering: "pixelated" }}
+                style={{display: "block", border: "5px solid black", imageRendering: "pixelated"}}
             />
         </div>
     );
@@ -126,14 +127,18 @@ function PlayerCanvas({players, spriteType, y, setY, ws, userEmail, username}) {
 function GamePage({supabase}) { 
     const [userEmail, setUserEmail] = useState('');
     const [username, setUsername] = useState('');
-    const [connectionStatus, setConnectionStatus] = useState('Connecting...');
     const [y, setY] = useState(0.81);
     const [players, setPlayers] = useState([]);
     const ws = useRef(null);
+    const navigate = useNavigate();
+    const [systemMessages, setSystemMessages] = useState([]);
+
+    function returnToLobby() {
+        navigate("/lobby");
+    };
 
     // const WEBSOCKET_URL = "wss://NGROK_URL/ws/connect"; // To use later to test multiplayer functionality
     const WEBSOCKET_URL = "ws://localhost:8000/ws/connect";
-    // const MOVE_PERCENT = 0.01;
 
     useEffect(() => {
         // Flag to prevent state updates after component unmount
@@ -143,7 +148,7 @@ function GamePage({supabase}) {
         const connectWebSocket = async() => {
             const {data: {session}} = await supabase.auth.getSession();
             if (!session) { // If no session found, update status and exit
-                setConnectionStatus('No session found.');
+                console.log("No session found.");
                 return;
             };
 
@@ -159,7 +164,7 @@ function GamePage({supabase}) {
             // WebSocket open event handler (inform user about connection status)
             ws.current.onopen = () => {
                 if (!isMounted) return;
-                setConnectionStatus('Connected!');
+                console.log("Connected!");
                 const message = {type: "move", email: email, y: 0.81};
                 if (ws.current?.readyState === WebSocket.OPEN) {
                     ws.current.send(JSON.stringify(message))
@@ -173,18 +178,25 @@ function GamePage({supabase}) {
                 if (message.type === "state_update") {
                     setPlayers(message.players);
                 };
+                if (message.type === "join/left") {
+                    const id = Date.now();
+                    setSystemMessages(prev => [...prev, {id, text: message.message}]);
+                    setTimeout(() => {
+                        setSystemMessages(prev => prev.filter(msg => msg.id !== id));
+                    }, 5000);
+                }
             };
 
             // Websocket close event handler (provide disconnect info)
             ws.current.onclose = (event) => {
                 if (!isMounted) return;
-                setConnectionStatus(`Disconnected. Code: ${event.code}`);
+                console.log(`Disconnected. Code ${event.code}`);
             };
 
             // Websocket error event handler
             ws.current.onerror = (error) => {
                 if (!isMounted) return;
-                setConnectionStatus('Connection Error! Check backend status.');
+                console.log("Connection error! Check backend status.")
             };
         };
 
@@ -202,6 +214,12 @@ function GamePage({supabase}) {
 
     return (
         <div>
+            <button onClick={returnToLobby}>Back to lobby</button>
+            <p>Use W or ↑ to move upward</p>
+            <p>Use S or ↓ to move downward</p>
+            <div className="system-messages">
+                {systemMessages.map(msg => (<div key={msg.id} className="system-message">{msg.text}</div>))}
+            </div>
             {/* <h2>Lobby</h2>
             <p>Status: {connectionStatus}</p> */}
             <PlayerCanvas players={players} spriteType="walk" y={y} setY={setY} ws={ws} userEmail={userEmail} username={username}/>

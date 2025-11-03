@@ -68,16 +68,19 @@ manager = ConnectionManager()
 async def websocket_endpoint(websocket: WebSocket, token: str):
     # Fallback User ID if authentication fails
     user_id = "unauthenticated" 
+    user_email = None
     
     try:
         # Decode and verify the JWT token
         auth_payload = authenticate_websocket_jwt(token)
         user_id = auth_payload.get("sub")
         user_email = auth_payload.get("email") # Get user
+        username = auth_payload.get("user_metadata", {}).get("username", user_email) # Get username
         
         # Add user to the active connection dictionary
         await manager.connect(user_id, websocket)
-        await manager.send_personal_message(json.dumps({"type": "connection", "message": f"Connection established. User ID: {user_id}"}), user_id)
+        # await manager.send_personal_message(json.dumps({"type": "connection", "message": f"Connection established. User ID: {user_id}"}), user_id)
+        await manager.broadcast_message(json.dumps({"type": "join/left", "message": f"{username} joined the game"}))
 
         # Infinite loop to listen for incoming messages
         while True:
@@ -110,6 +113,7 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
         player_positions.pop(user_email, None)
         state_message = json.dumps({"type": "state_update", "players": player_positions})
         await manager.broadcast_message(state_message)
+        await manager.broadcast_message(json.dumps({"type": "join/left", "message": f"{username} left the game"}))
         print(f"User {user_id} disconnected.")
     
     # Catches any unexpected errors
