@@ -93,7 +93,7 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
                     x = message.get("x", 0.03) # Temporary 0.0 bc we're not doing that yet
                     y = message.get("y")
                     if email is not None and x is not None and y is not None:
-                        player_positions[email] = {"x": x, "y": y}
+                        player_positions[email] = {"x": x, "y": y, "username": username}
                     # print(f"player positions: {player_positions}")
                     state_message = json.dumps({"type": "state_update", "players": player_positions})
                     print(f"state update: {state_message}")

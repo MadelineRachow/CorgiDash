@@ -2,7 +2,7 @@ import {useEffect, useState, useRef} from 'react';
 import {useNavigate} from 'react-router-dom';
 import "./App.css";
 
-function PlayerCanvas({players, spriteType, y, setY, ws, userEmail, username}) {
+function PlayerCanvas({players, spriteType, y, setY, ws, userEmail}) {
     const canvasRef = useRef(null);
     const frameRef = useRef(0);
     const lastFrameUpdateRef = useRef(0);
@@ -64,7 +64,7 @@ function PlayerCanvas({players, spriteType, y, setY, ws, userEmail, username}) {
             ctx.textAlign = "center";
 
             // Loop over all players and draw them
-            Object.entries(players).forEach(([email, { x, y }]) => {
+            Object.entries(players).forEach(([email, {x, y, username}]) => {
                 const px = x * WORLD_WIDTH;
                 const py = y * WORLD_HEIGHT;
 
@@ -109,8 +109,8 @@ function PlayerCanvas({players, spriteType, y, setY, ws, userEmail, username}) {
             };
         };
         // Listen for keydown events on the canvas
-        canvas.addEventListener("keydown", handleMovement);
-        return () => canvas.removeEventListener("keydown", handleMovement);
+        window.addEventListener("keydown", handleMovement);
+        return () => window.removeEventListener("keydown", handleMovement);
     }, [userEmail, y, setY]);
 
     // Render the canvas
@@ -126,7 +126,7 @@ function PlayerCanvas({players, spriteType, y, setY, ws, userEmail, username}) {
 
 function GamePage({supabase}) { 
     const [userEmail, setUserEmail] = useState('');
-    const [username, setUsername] = useState('');
+    // const [username, setUsername] = useState('');
     const [y, setY] = useState(0.81);
     const [players, setPlayers] = useState([]);
     const ws = useRef(null);
@@ -154,9 +154,9 @@ function GamePage({supabase}) {
 
             // Extract the JWT token for authentication the WebSocket connection
             const email = session.user.email
-            const username = session.user.user_metadata.username;
+            // const username = session.user.user_metadata.username;
             setUserEmail(email);
-            setUsername(username);
+            // setUsername(username);
             const authToken = session.access_token;
             const socketUrl = `${WEBSOCKET_URL}?token=${authToken}`;
             ws.current = new WebSocket(socketUrl);
@@ -222,7 +222,7 @@ function GamePage({supabase}) {
             </div>
             {/* <h2>Lobby</h2>
             <p>Status: {connectionStatus}</p> */}
-            <PlayerCanvas players={players} spriteType="walk" y={y} setY={setY} ws={ws} userEmail={userEmail} username={username}/>
+            <PlayerCanvas players={players} spriteType="walk" y={y} setY={setY} ws={ws} userEmail={userEmail}/>
         </div>
     )
 };
