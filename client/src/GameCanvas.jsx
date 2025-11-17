@@ -1,4 +1,4 @@
-import {useEffect, useState, useRef} from 'react';
+import {useEffect, useRef, useMemo} from 'react';
 
 function GameCanvas({ws, userEmail, userX, userY, setX, setY, players}) {
     const canvasRef = useRef(null);
@@ -13,9 +13,9 @@ function GameCanvas({ws, userEmail, userX, userY, setX, setY, players}) {
     const SPRITE_TYPE = "walk";
 
     // Sprite dictionary (more TBA)
-    const sprites = {
+    const sprites = useMemo(() => ({
         walk: {src: "/assets/corgi_walk/corgi_tri_no_tail_walk_softer.png", frames: 5},
-    };
+    }), []);
 
     // Load the background image once on component mount
     useEffect(() => {
@@ -26,7 +26,7 @@ function GameCanvas({ws, userEmail, userX, userY, setX, setY, players}) {
     useEffect(() => {
         spriteRef.current.src = sprites[SPRITE_TYPE].src;
         frameRef.current = 0; // Reset animation to first frame
-    }, [SPRITE_TYPE]);    
+    }, [SPRITE_TYPE, sprites]);    
 
     useEffect(() => {
         const canvas = canvasRef.current;
@@ -68,7 +68,7 @@ function GameCanvas({ws, userEmail, userX, userY, setX, setY, players}) {
             // Loop over all players and draw them
             Object.entries(players).forEach(([email, {x, y, username}]) => {
                 let px;
-                if (email == userEmail) {
+                if (email === userEmail) {
                     px = ANCHOR_X * WORLD_WIDTH;
                 } else {
                     px = ANCHOR_X + (x - userX); // Will want to store userX locally (VERY IMPORTANT)
@@ -93,7 +93,7 @@ function GameCanvas({ws, userEmail, userX, userY, setX, setY, players}) {
         // Start the animation loop
         animationID = requestAnimationFrame(draw);
         return () => cancelAnimationFrame(animationID);
-    }, [players, SPRITE_TYPE]);
+    }, [players, userX, userEmail, SPRITE_TYPE, sprites]);
 
     // Handles player movement (currently only up/down)
     useEffect(() => {
@@ -117,7 +117,7 @@ function GameCanvas({ws, userEmail, userX, userY, setX, setY, players}) {
         // Listen for keydown events on the canvas
         window.addEventListener("keydown", handleMovement);
         return () => window.removeEventListener("keydown", handleMovement);
-    }, [userEmail, userY, setY]);    
+    }, [userEmail, userY, setY, userX, ws]);    
 
     // Render the canvas
     return (
