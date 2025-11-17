@@ -74,7 +74,7 @@ function GameCanvas({ws, userEmail, userX, userY, setX, setY, players}) {
             context.fillStyle = "black";
             context.textAlign = "center";
 
-            // Loop over all players and draw them
+            // Loop over all players and draw them (TODO: interpolation?)
             Object.entries(players).forEach(([email, {x, y, username}]) => {
                 let px;
                 if (email === userEmail) {px = ANCHOR_X * WORLD_WIDTH} 
@@ -101,40 +101,54 @@ function GameCanvas({ws, userEmail, userX, userY, setX, setY, players}) {
         return () => cancelAnimationFrame(animationID);
     }, [players, userX, userEmail, SPRITE_TYPE, sprites]);
 
-    // Handles player movement (currently only up/down)
+    // Handles player movement
     useEffect(() => {
-        const interval = setInterval(() => {
-            setX(prevX => prevX + MOVE_PERCENT_X);
-            if (ws.current?.readyState === WebSocket.OPEN) {
-                ws.current.send(JSON.stringify({type: "move", email: userEmail, x: userX + MOVE_PERCENT_X, y: userY}));
-            }
-        }, 16);
+        const THROTTLE_MS = 50;
+        let lastSent = 0;
 
-        return () => clearInterval(interval);
-    }, [userEmail, userY, ws, setX, userX]);
-
-    useEffect(() => {
-        const canvas = canvasRef.current;
-        canvas.tabIndex = 0;
-        canvas.focus()
-
-        const handleMovement = (e) => {
-            let newY = userY;
-            if (e.key === "ArrowUp" || e.key === "w") {newY = Math.max(0.75, userY - MOVE_PERCENT_Y) // Move up
-            } else if (e.key === "ArrowDown" || e.key === "s") {newY = Math.min(0.9, userY + MOVE_PERCENT_Y) // Move down
-            } else {return};
-
-            // Update local state and send movement over WebSocket
-            setY(newY);
-            const message = {type: "move", email: userEmail, x: userX, y: newY};
-            if (ws.current?.readyState === WebSocket.OPEN) {
-                ws.current.send(JSON.stringify(message))
+        const sendMove = (x, y) => {
+            const now = Date.now();
+            if (now - lastSent > THROTTLE_MS && ws.current?.readyState === WebSocket.OPEN) {
+                ws.current.send(JSON.stringify({type: "move", email: userEmail, x, y}));
+                lastSent = now;
             };
         };
-        // Listen for keydown events on the canvas
+
+        // Horizontal movement
+        const interval = setInterval(() => {
+            setX(prevX => {
+                const newX = prevX + MOVE_PERCENT_X;
+                sendMove(newX, userY); 
+                return newX;
+            });
+        }, 16);
+
+        // Vertical movement
+        const handleMovement = (e) => {
+            let newY = userY;
+            if (e.key === "ArrowUp" || e.key === "w") {
+                newY = Math.max(0.75, userY - MOVE_PERCENT_Y);
+            } else if (e.key === "ArrowDown" || e.key === "s") {
+                newY = Math.min(0.9, userY + MOVE_PERCENT_Y);
+            } else {
+                return;
+            };
+
+            setY(newY);
+            sendMove(userX, newY);
+        };        
+
+        const canvas = canvasRef.current;
+        canvas.tabIndex = 0;
+        canvas.focus();
         window.addEventListener("keydown", handleMovement);
-        return () => window.removeEventListener("keydown", handleMovement);
-    }, [userEmail, userY, setY, userX, ws]);    
+
+        return () => {
+            clearInterval(interval);
+            window.removeEventListener("keydown", handleMovement);
+        };
+    // eslint-disable-next-line
+    }, [userEmail, ws]);   
 
     // Render the canvas
     return (
