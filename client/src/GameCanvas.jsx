@@ -9,6 +9,7 @@ function GameCanvas({ws, userEmail, userX, userY, setX, setY, players}) {
 
     const ANCHOR_X = 0.03;
     const FRAME_DURATION = 150;
+    const MOVE_PERCENT_X = 0.04;
     const MOVE_PERCENT_Y = 0.01;
     const SPRITE_TYPE = "walk";
 
@@ -47,7 +48,15 @@ function GameCanvas({ws, userEmail, userX, userY, setX, setY, players}) {
             context.imageSmoothingEnabled = false;
             
             // Draw background
-            context.drawImage(backgroundRef.current, 0, 0, backgroundRef.current.width / 2, backgroundRef.current.height, 0, 0, WORLD_WIDTH, WORLD_HEIGHT);
+            const background = backgroundRef.current;
+            const xOffset = (userX * MOVE_PERCENT_X * background.width) % background.width;
+            const scale = WORLD_HEIGHT / background.height;
+
+            const drawSegment = (sx, sw, dx) => // source x, source width, destination x
+                context.drawImage(background, sx, 0, sw, background.height, dx * scale, 0, sw * scale, WORLD_HEIGHT);
+
+            drawSegment(xOffset, background.width - xOffset, 0);
+            drawSegment(0, xOffset, background.width - xOffset);
 
             // Handle animation frames on timed interval (FRAME_DURATION)
             if (!lastFrameUpdateRef.current) {
@@ -68,11 +77,8 @@ function GameCanvas({ws, userEmail, userX, userY, setX, setY, players}) {
             // Loop over all players and draw them
             Object.entries(players).forEach(([email, {x, y, username}]) => {
                 let px;
-                if (email === userEmail) {
-                    px = ANCHOR_X * WORLD_WIDTH;
-                } else {
-                    px = ANCHOR_X + (x - userX); // Will want to store userX locally (VERY IMPORTANT)
-                }
+                if (email === userEmail) {px = ANCHOR_X * WORLD_WIDTH} 
+                else {px = (x - userX + ANCHOR_X * WORLD_WIDTH)}; // Will want to store userX locally (VERY IMPORTANT)
                 const py = y * WORLD_HEIGHT;
 
                 // Draw the current animation frame of the sprite
@@ -96,6 +102,17 @@ function GameCanvas({ws, userEmail, userX, userY, setX, setY, players}) {
     }, [players, userX, userEmail, SPRITE_TYPE, sprites]);
 
     // Handles player movement (currently only up/down)
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setX(prevX => prevX + MOVE_PERCENT_X);
+            if (ws.current?.readyState === WebSocket.OPEN) {
+                ws.current.send(JSON.stringify({type: "move", email: userEmail, x: userX + MOVE_PERCENT_X, y: userY}));
+            }
+        }, 16);
+
+        return () => clearInterval(interval);
+    }, [userEmail, userY, ws, setX, userX]);
+
     useEffect(() => {
         const canvas = canvasRef.current;
         canvas.tabIndex = 0;
