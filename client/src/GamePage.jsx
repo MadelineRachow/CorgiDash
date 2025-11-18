@@ -11,7 +11,7 @@ function GamePage({supabase}) {
 
     const [userEmail, setUserEmail] = useState('');
     const [x, setX] = useState(0.00);
-    const [y, setY] = useState(0.81); // Eventually change based on order of joining
+    const [y, setY] = useState(0.00); 
     const [players, setPlayers] = useState([]);
     const [readyPlayers, setReadyPlayers] = useState([]);
     const [systemMessages, setSystemMessages] = useState([]); // Join or left messages
@@ -57,7 +57,6 @@ function GamePage({supabase}) {
                     setReadyPlayers(message.players);
                 };
                 if (message.type === "state_update") {
-                    console.log(`players ${message}`);
                     setPlayers(message.players);
                 };
                 if (message.type === "join/left") {
@@ -133,6 +132,13 @@ function GamePage({supabase}) {
 
         return () => clearTimeout(timer);
     }, [countdown]);
+
+    // Initialize local Y after receiving player positions from backend
+    useEffect(() => {
+        if (players[userEmail] && !raceStarted) {
+            setY(players[userEmail].y);
+        }
+    }, [players, userEmail, raceStarted]);
 
     return (
         <div>
