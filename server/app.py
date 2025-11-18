@@ -91,25 +91,20 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
                 message = json.loads(data)
 
                 if message.get("type") == "ready":
-                    print("Received message for ready")
                     email = message.get("email")
                     ready = message.get("ready")
                     if email is not None and ready is not None:
-                        player_ready[email] = ready
+                        player_ready[email] = {"ready": ready, "username": username}
                     ready_message = json.dumps({"type": "ready", "players": player_ready})
-                    print(f"ready update: {ready_message}")
-                    print(f"player_ready: {player_ready}")
                     await manager.broadcast_message(ready_message)
 
                 if message.get("type") == "move":
                     email = message.get("email")
-                    x = message.get("x") # Temporary 0.0 bc we're not doing that yet
+                    x = message.get("x") 
                     y = message.get("y")
                     if email is not None and x is not None and y is not None:
                         player_positions[email] = {"x": x, "y": y, "username": username}
-                    # print(f"player positions: {player_positions}")
                     state_message = json.dumps({"type": "state_update", "players": player_positions})
-                    # print(f"state update: {state_message}")
                     await manager.broadcast_message(state_message)
 
             except json.JSONDecodeError:
@@ -125,6 +120,7 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
     except WebSocketDisconnect:
         manager.disconnect(user_id)
         player_positions.pop(user_email, None)
+        player_ready.pop(user_email, None)
         state_message = json.dumps({"type": "state_update", "players": player_positions})
         await manager.broadcast_message(state_message)
         await manager.broadcast_message(json.dumps({"type": "join/left", "message": f"{username} left the game"}))

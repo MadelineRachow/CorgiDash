@@ -13,6 +13,7 @@ function GamePage({supabase}) {
     const [x, setX] = useState(0.00);
     const [y, setY] = useState(0.81); // Eventually change based on order of joining
     const [players, setPlayers] = useState([]);
+    const [readyPlayers, setReadyPlayers] = useState([]);
     const [systemMessages, setSystemMessages] = useState([]); // Join or left messages
     const [readyToStart, setReadyToStart] = useState(false);
     const [raceStarted, setRaceStarted] = useState(false);
@@ -34,10 +35,8 @@ function GamePage({supabase}) {
             };
 
             // Extract the JWT token for authentication the WebSocket connection
-            const email = session.user.email
-            // const username = session.user.user_metadata.username;
+            const email = session.user.email;
             setUserEmail(email);
-            // setUsername(username);
             const authToken = session.access_token;
             const socketUrl = `${WEBSOCKET_URL}?token=${authToken}`;
             ws.current = new WebSocket(socketUrl);
@@ -58,6 +57,9 @@ function GamePage({supabase}) {
             ws.current.onmessage = (event) => {
                 if (!isMounted) return;
                 const message = JSON.parse(event.data);
+                if (message.type === "ready") {
+                    setReadyPlayers(message.players);
+                };
                 if (message.type === "state_update") {
                     setPlayers(message.players);
                 };
@@ -98,10 +100,19 @@ function GamePage({supabase}) {
     // Let backend know player is ready to begin race
     useEffect(() => {
         if (ws.current?.readyState === WebSocket.OPEN) {
-            console.log(readyToStart)
             ws.current.send(JSON.stringify({type: "ready", email: userEmail, ready: readyToStart}));
         };
     }, [userEmail, readyToStart])
+
+    // Start race if all players are ready
+    useEffect(() => {
+        if (Object.keys(readyPlayers).length > 0 && Object.values(readyPlayers).every(player => player.ready === true)) {
+            if (raceStarted !== true) {
+                setRaceStarted(true);
+            }
+        };
+    // eslint-disable-next-line
+    }, [readyPlayers])
 
     return (
         <div>
@@ -112,12 +123,10 @@ function GamePage({supabase}) {
                 {systemMessages.map(msg => (<div key={msg.id} className="system-message">{msg.text}</div>))}
             </div>
             <Popup 
-                open={true} 
-                message="Are you ready to begin the race?"
-                buttons={[
-                    {label: "I'm ready!", onClick: () => setReadyToStart(true)},
-                    {label: "Back to lobby", onClick: returnToLobby}
-                ]}
+                open={true}
+                readyPlayers={readyPlayers}
+                setReadyToStart={setReadyToStart}
+                returnToLobby={returnToLobby}
             />
             <GameCanvas 
                 ws={ws} 
@@ -130,7 +139,7 @@ function GamePage({supabase}) {
                 raceStarted={raceStarted}
             />
         </div>
-    )    
-}
+    );    
+};
 
 export default GamePage;
