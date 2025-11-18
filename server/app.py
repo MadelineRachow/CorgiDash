@@ -174,8 +174,9 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
                 player_positions.pop(room_id, None)
                 player_ready.pop(room_id, None)
 
-        await manager.broadcast_message(room_id, json.dumps({"type": "state_update", "players": player_positions[room_id]}))
-        await manager.broadcast_message(room_id, json.dumps({"type": "join/left", "message": f"{username} left the game"}))
+        if room_id in player_positions:
+            await manager.broadcast_message(room_id, json.dumps({"type": "state_update", "players": player_positions[room_id]}))
+            await manager.broadcast_message(room_id, json.dumps({"type": "join/left", "message": f"{username} left the game"}))
         print(f"User {user_id} disconnected.")
     
     # Catches any unexpected errors

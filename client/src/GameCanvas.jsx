@@ -79,10 +79,14 @@ function GameCanvas({ws, userEmail, userX, userY, setX, setY, players, raceStart
             context.textAlign = "center";
 
             // Loop over all players and draw them (TODO: interpolation?)
-            Object.entries(players).forEach(([email, {x, y, username}]) => {
-                let px;
-                if (email === userEmail) {px = ANCHOR_X * WORLD_WIDTH} 
-                else {px = (x - userX + ANCHOR_X * WORLD_WIDTH)}; // Will want to store userX locally (VERY IMPORTANT)
+            const playersArray = Object.values(players);
+            playersArray.sort((a, b) => a.y - b.y);
+
+            playersArray.forEach(player => {
+                const {x, y, username} = player;
+                let px = (player.email === userEmail)
+                    ? ANCHOR_X * WORLD_WIDTH // Other player's relative X coord
+                    : x - userX + ANCHOR_X * WORLD_WIDTH // Player's relative X coord Will want to store userX locally (VERY IMPORTANT)
                 const py = y * WORLD_HEIGHT;
 
                 // Draw the current animation frame of the sprite
@@ -97,6 +101,7 @@ function GameCanvas({ws, userEmail, userX, userY, setX, setY, players, raceStart
                 // Draw player username/email above sprite
                 context.fillText(username, px, py - (SPRITE_SIZE * SPRITE_SCALE) / 2 - 4);
             });
+
             // Request the next animation frame
             animationID = requestAnimationFrame(draw);
         }
