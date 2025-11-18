@@ -12,6 +12,7 @@ SUPABASE_AUDIENCE = "authenticated"
 
 app = FastAPI()
 player_positions = {}
+player_ready = {}
 
 def authenticate_websocket_jwt(token: str) -> dict:
     try:
@@ -88,6 +89,18 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
             # print(f"Received from client: {data}")
             try: 
                 message = json.loads(data)
+
+                if message.get("type") == "ready":
+                    print("Received message for ready")
+                    email = message.get("email")
+                    ready = message.get("ready")
+                    if email is not None and ready is not None:
+                        player_ready[email] = ready
+                    ready_message = json.dumps({"type": "ready", "players": player_ready})
+                    print(f"ready update: {ready_message}")
+                    print(f"player_ready: {player_ready}")
+                    await manager.broadcast_message(ready_message)
+
                 if message.get("type") == "move":
                     email = message.get("email")
                     x = message.get("x") # Temporary 0.0 bc we're not doing that yet
@@ -96,8 +109,9 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
                         player_positions[email] = {"x": x, "y": y, "username": username}
                     # print(f"player positions: {player_positions}")
                     state_message = json.dumps({"type": "state_update", "players": player_positions})
-                    print(f"state update: {state_message}")
+                    # print(f"state update: {state_message}")
                     await manager.broadcast_message(state_message)
+
             except json.JSONDecodeError:
                 print("Received invalid JSON")
     

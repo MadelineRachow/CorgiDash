@@ -1,6 +1,7 @@
 import {useEffect, useState, useRef} from 'react';
 import {useNavigate} from 'react-router-dom';
 import GameCanvas from "./GameCanvas";
+import Popup from "./Popup";
 import "./App.css";
 
 function GamePage({supabase}) {
@@ -13,6 +14,8 @@ function GamePage({supabase}) {
     const [y, setY] = useState(0.81); // Eventually change based on order of joining
     const [players, setPlayers] = useState([]);
     const [systemMessages, setSystemMessages] = useState([]); // Join or left messages
+    const [readyToStart, setReadyToStart] = useState(false);
+    const [raceStarted, setRaceStarted] = useState(false);
 
     function returnToLobby() {
         navigate("/lobby");
@@ -44,8 +47,10 @@ function GamePage({supabase}) {
                 if (!isMounted) return;
                 console.log("Connected!");
                 const message = {type: "move", email: email, x: 0.00, y: 0.81};
+                const message2 = {type: "ready", email: email, ready: false}
                 if (ws.current?.readyState === WebSocket.OPEN) {
-                    ws.current.send(JSON.stringify(message))
+                    ws.current.send(JSON.stringify(message));
+                    ws.current.send(JSON.stringify(message2));
                 };
             };
 
@@ -74,7 +79,7 @@ function GamePage({supabase}) {
             // Websocket error event handler
             ws.current.onerror = (error) => {
                 if (!isMounted) return;
-                console.log("Connection error! Check backend status.")
+                console.log(`Connection error! Check backend status. Error: ${error}`)
             };
         };
 
@@ -90,6 +95,14 @@ function GamePage({supabase}) {
         };
     }, [supabase]);
 
+    // Let backend know player is ready to begin race
+    useEffect(() => {
+        if (ws.current?.readyState === WebSocket.OPEN) {
+            console.log(readyToStart)
+            ws.current.send(JSON.stringify({type: "ready", email: userEmail, ready: readyToStart}));
+        };
+    }, [userEmail, readyToStart])
+
     return (
         <div>
             <button onClick={returnToLobby}>Back to lobby</button>
@@ -98,6 +111,14 @@ function GamePage({supabase}) {
             <div className="system-messages">
                 {systemMessages.map(msg => (<div key={msg.id} className="system-message">{msg.text}</div>))}
             </div>
+            <Popup 
+                open={true} 
+                message="Are you ready to begin the race?"
+                buttons={[
+                    {label: "I'm ready!", onClick: () => setReadyToStart(true)},
+                    {label: "Back to lobby", onClick: returnToLobby}
+                ]}
+            />
             <GameCanvas 
                 ws={ws} 
                 userEmail={userEmail}
@@ -105,7 +126,8 @@ function GamePage({supabase}) {
                 userY={y} 
                 setX={setX} 
                 setY={setY} 
-                players={players} 
+                players={players}
+                raceStarted={raceStarted}
             />
         </div>
     )    

@@ -1,13 +1,13 @@
 import {useEffect, useRef, useMemo} from 'react';
 
-function GameCanvas({ws, userEmail, userX, userY, setX, setY, players}) {
+function GameCanvas({ws, userEmail, userX, userY, setX, setY, players, raceStarted}) {
     const canvasRef = useRef(null);
     const backgroundRef = useRef(new Image());
     const spriteRef = useRef(new Image());
     const frameRef = useRef(0);
     const lastFrameUpdateRef = useRef(0);
 
-    const ANCHOR_X = 0.03;
+    const ANCHOR_X = 0.25;
     const FRAME_DURATION = 150;
     const MOVE_PERCENT_X = 0.04;
     const MOVE_PERCENT_Y = 0.01;
@@ -49,7 +49,9 @@ function GameCanvas({ws, userEmail, userX, userY, setX, setY, players}) {
             
             // Draw background
             const background = backgroundRef.current;
-            const xOffset = (userX * MOVE_PERCENT_X * background.width) % background.width;
+            const xOffset = raceStarted
+                ? (userX * MOVE_PERCENT_X * background.width) % background.width
+                : 0;
             const scale = WORLD_HEIGHT / background.height;
 
             const drawSegment = (sx, sw, dx) => // source x, source width, destination x
@@ -99,7 +101,7 @@ function GameCanvas({ws, userEmail, userX, userY, setX, setY, players}) {
         // Start the animation loop
         animationID = requestAnimationFrame(draw);
         return () => cancelAnimationFrame(animationID);
-    }, [players, userX, userEmail, SPRITE_TYPE, sprites]);
+    }, [players, userX, userEmail, SPRITE_TYPE, sprites, raceStarted]);
 
     // Handles player movement
     useEffect(() => {
@@ -116,6 +118,7 @@ function GameCanvas({ws, userEmail, userX, userY, setX, setY, players}) {
 
         // Horizontal movement
         const interval = setInterval(() => {
+            if (!raceStarted) return; // Only allow movement when race has started
             setX(prevX => {
                 const newX = prevX + MOVE_PERCENT_X;
                 sendMove(newX, userY); 
@@ -125,6 +128,7 @@ function GameCanvas({ws, userEmail, userX, userY, setX, setY, players}) {
 
         // Vertical movement
         const handleMovement = (e) => {
+            if (!raceStarted) return; // Only allow movement when race has started
             let newY = userY;
             if (e.key === "ArrowUp" || e.key === "w") {
                 newY = Math.max(0.75, userY - MOVE_PERCENT_Y);
@@ -148,7 +152,7 @@ function GameCanvas({ws, userEmail, userX, userY, setX, setY, players}) {
             window.removeEventListener("keydown", handleMovement);
         };
     // eslint-disable-next-line
-    }, [userEmail, ws]);   
+    }, [userEmail, ws, raceStarted]);   
 
     // Render the canvas
     return (
