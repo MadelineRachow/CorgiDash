@@ -8,9 +8,11 @@ import json
 load_dotenv()
 SUPABASE_JWT_SECRET = os.getenv("SUPABASE_JWT_SECRET", "YOUR_SUPABASE_JWT_SECRET_HERE") 
 SUPABASE_URL = os.getenv("SUPABASE_URL", "YOUR_SUPABASE_URL_HERE")
-SUPABASE_AUDIENCE = "authenticated" 
+SUPABASE_AUDIENCE = "authenticated"
+ROOM_CAPACITY = 3 
 
 app = FastAPI()
+rooms = {}
 player_positions = {}
 player_ready = {}
 
@@ -41,12 +43,29 @@ class ConnectionManager:
     def __init__(self):
         # Dictionary to keep track of active WebSocket connections
         self.active_connections: dict[str, WebSocket] = {}
+        self.user_rooms: dict[str, str] = {}
 
     # Accepts incoming Websocket connection and associates it with a User ID
     async def connect(self, user_id: str, websocket: WebSocket):
+        # Create or find a room with space
+        room_id = None
+        for rid, users in rooms.items():
+            if len(users) < ROOM_CAPACITY:
+                room_id = rid
+                break
+        if room_id is None:
+            room_id = f"room_{len(rooms) + 1}"
+            rooms[room_id] = set()
+        
+        # Add player to room
+        rooms[room_id].add(user_id)
+        self.user_rooms[user_id] = room_id
+
+        # Accept WebSocket
         await websocket.accept()
         self.active_connections[user_id] = websocket
-        print(f"[User joined] Active connections: {len(self.active_connections)}")
+        print(f"[User joined] Active connections: {len(self.active_connections)} | {room_id}")
+        return room_id
 
     # Removes user from active connections dictionary when they disconnect
     def disconnect(self, user_id: str):
@@ -59,9 +78,15 @@ class ConnectionManager:
         if user_id in self.active_connections:
             await self.active_connections[user_id].send_text(message)
 
-    async def broadcast_message(self, message: str):
-        for websocket in self.active_connections.values():
-            await websocket.send_text(message)
+    # async def broadcast_message(self, message: str):
+    #     for websocket in self.active_connections.values():
+    #         await websocket.send_text(message)
+
+    # Send message to specific room
+    async def broadcast_message(self, room_id: str, message: str):
+        for user_id, websocket in self.active_connections.items():
+            if self.user_rooms.get(user_id) == room_id:
+                await websocket.send_text(message)
 
 manager = ConnectionManager()
 
@@ -78,10 +103,9 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
         user_email = auth_payload.get("email") # Get user
         username = auth_payload.get("user_metadata", {}).get("username", user_email) # Get username
         
-        # Add user to the active connection dictionary
-        await manager.connect(user_id, websocket)
-        # await manager.send_personal_message(json.dumps({"type": "connection", "message": f"Connection established. User ID: {user_id}"}), user_id)
-        await manager.broadcast_message(json.dumps({"type": "join/left", "message": f"{username} joined the game"}))
+        # Add user to the active connection dictionary and get room
+        room_id = await manager.connect(user_id, websocket)
+        await manager.broadcast_message(room_id, json.dumps({"type": "join/left", "message": f"{username} joined the game"}))
 
         # Infinite loop to listen for incoming messages
         while True:
@@ -94,18 +118,20 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
                     email = message.get("email")
                     ready = message.get("ready")
                     if email is not None and ready is not None:
-                        player_ready[email] = {"ready": ready, "username": username}
-                    ready_message = json.dumps({"type": "ready", "players": player_ready})
-                    await manager.broadcast_message(ready_message)
+                        player_ready.setdefault(room_id, {})[email] = {"ready": ready, "username": username}
+                    ready_message = json.dumps({"type": "ready", "players": player_ready[room_id]})
+                    await manager.broadcast_message(room_id, ready_message)
 
                 if message.get("type") == "move":
+                    print(message)
                     email = message.get("email")
                     x = message.get("x") 
                     y = message.get("y")
                     if email is not None and x is not None and y is not None:
-                        player_positions[email] = {"x": x, "y": y, "username": username}
-                    state_message = json.dumps({"type": "state_update", "players": player_positions})
-                    await manager.broadcast_message(state_message)
+                        player_positions.setdefault(room_id, {})[email] = {"x": x, "y": y, "username": username}
+                    state_message = json.dumps({"type": "state_update", "players": player_positions[room_id]})
+                    print(state_message)
+                    await manager.broadcast_message(room_id, state_message)
 
             except json.JSONDecodeError:
                 print("Received invalid JSON")
@@ -119,11 +145,26 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
     # Remove user from active connection dictionary upon disconnect
     except WebSocketDisconnect:
         manager.disconnect(user_id)
-        player_positions.pop(user_email, None)
-        player_ready.pop(user_email, None)
+        room_id = manager.user_rooms.get(user_id)
+
+        if room_id:
+
+            # Remove user from room and delete their position and ready states
+            rooms[room_id].discard(user_id)
+            if user_email in player_positions.get(room_id, {}):
+                del player_positions[room_id][user_email]
+            if user_email in player_ready.get(room_id, {}):
+                del player_ready[room_id][user_email]
+
+            # If the room is empty, delete the room
+            if not rooms[room_id]:
+                del rooms[room_id] 
+                player_positions.pop(room_id, None)
+                player_ready.pop(room_id, None)
+
         state_message = json.dumps({"type": "state_update", "players": player_positions})
-        await manager.broadcast_message(state_message)
-        await manager.broadcast_message(json.dumps({"type": "join/left", "message": f"{username} left the game"}))
+        await manager.broadcast_message(room_id, state_message)
+        await manager.broadcast_message(room_id, json.dumps({"type": "join/left", "message": f"{username} left the game"}))
         print(f"User {user_id} disconnected.")
     
     # Catches any unexpected errors

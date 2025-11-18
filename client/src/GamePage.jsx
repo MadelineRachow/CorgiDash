@@ -63,6 +63,7 @@ function GamePage({supabase}) {
                     setReadyPlayers(message.players);
                 };
                 if (message.type === "state_update") {
+                    console.log(`players ${message}`);
                     setPlayers(message.players);
                 };
                 if (message.type === "join/left") {
