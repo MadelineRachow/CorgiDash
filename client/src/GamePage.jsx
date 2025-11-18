@@ -15,7 +15,9 @@ function GamePage({supabase}) {
     const [players, setPlayers] = useState([]);
     const [readyPlayers, setReadyPlayers] = useState([]);
     const [systemMessages, setSystemMessages] = useState([]); // Join or left messages
+    const [showPopup, setShowPopup] = useState(true);
     const [readyToStart, setReadyToStart] = useState(false);
+    const [countdown, setCountdown] = useState(null);
     const [raceStarted, setRaceStarted] = useState(false);
 
     function returnToLobby() {
@@ -104,15 +106,38 @@ function GamePage({supabase}) {
         };
     }, [userEmail, readyToStart])
 
-    // Start race if all players are ready
+    // Trigger countdown if all players are readu
     useEffect(() => {
-        if (Object.keys(readyPlayers).length > 0 && Object.values(readyPlayers).every(player => player.ready === true)) {
-            if (raceStarted !== true) {
-                setRaceStarted(true);
-            }
+        if (
+            Object.keys(readyPlayers).length > 0 && 
+            Object.values(readyPlayers).every(player => player.ready === true) &&
+            countdown === null && raceStarted === false
+        ) {
+            setCountdown(3);
         };
     // eslint-disable-next-line
-    }, [readyPlayers])
+    }, [readyPlayers, countdown])
+
+    // Handle countdown ticking
+    useEffect(() => {
+        if (countdown === null) return;
+
+        // Start race when countdown finishes
+        if (countdown === 0) {
+            setRaceStarted(true);
+            setTimeout(() => {
+                setCountdown(null);
+                setShowPopup(false);
+            }, 1000); 
+            return;
+        };
+
+        const timer = setTimeout(() => {
+            setCountdown(prev => prev - 1);
+        }, 1000);
+
+        return () => clearTimeout(timer);
+    }, [countdown]);
 
     return (
         <div>
@@ -123,8 +148,9 @@ function GamePage({supabase}) {
                 {systemMessages.map(msg => (<div key={msg.id} className="system-message">{msg.text}</div>))}
             </div>
             <Popup 
-                open={true}
+                open={showPopup}
                 readyPlayers={readyPlayers}
+                countdown={countdown}
                 setReadyToStart={setReadyToStart}
                 returnToLobby={returnToLobby}
             />
