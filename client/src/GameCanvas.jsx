@@ -6,6 +6,8 @@ function GameCanvas({ws, userEmail, userX, userY, setX, setY, players, raceStart
     const spriteRef = useRef(new Image());
     const frameRef = useRef(0);
     const lastFrameUpdateRef = useRef(0);
+    const xRef = useRef(userX);
+    const yRef = useRef(userY);
 
     const ANCHOR_X = 0.25;
     const FRAME_DURATION = 150;
@@ -103,44 +105,41 @@ function GameCanvas({ws, userEmail, userX, userY, setX, setY, players, raceStart
         return () => cancelAnimationFrame(animationID);
     }, [players, userX, userEmail, SPRITE_TYPE, sprites, raceStarted]);
 
+    useEffect(() => {xRef.current = userX;}, [userX]);
+    useEffect(() => {yRef.current = userY;}, [userY]);
+
     // Handles player movement
     useEffect(() => {
         const THROTTLE_MS = 50;
         let lastSent = 0;
 
-        const sendMove = (x, y) => {
+        const sendMove = () => {
             const now = Date.now();
             if (now - lastSent > THROTTLE_MS && ws.current?.readyState === WebSocket.OPEN) {
-                ws.current.send(JSON.stringify({type: "move", email: userEmail, x, y}));
+                ws.current.send(JSON.stringify({type: "move", email: userEmail, x: xRef.current, y: yRef.current}));
                 lastSent = now;
             };
         };
 
         // Horizontal movement
         const interval = setInterval(() => {
-            if (!raceStarted) return; // Only allow movement when race has started
-            setX(prevX => {
-                const newX = prevX + MOVE_PERCENT_X;
-                sendMove(newX, userY); 
-                return newX;
-            });
+            if (!raceStarted) return;
+            setX(prevX => prevX + MOVE_PERCENT_X);
+            sendMove();
         }, 16);
 
         // Vertical movement
         const handleMovement = (e) => {
-            if (!raceStarted) return; // Only allow movement when race has started
-            let newY = userY;
-            if (e.key === "ArrowUp" || e.key === "w") {
-                newY = Math.max(0.75, userY - MOVE_PERCENT_Y);
-            } else if (e.key === "ArrowDown" || e.key === "s") {
-                newY = Math.min(0.9, userY + MOVE_PERCENT_Y);
-            } else {
-                return;
-            };
+            if (!raceStarted) return;
 
-            setY(newY);
-            sendMove(userX, newY);
-        };        
+            setY(prevY => {
+                let newY = prevY;
+                if (e.key === "ArrowUp" || e.key === "w") newY = Math.max(0.75, prevY - MOVE_PERCENT_Y);
+                if (e.key === "ArrowDown" || e.key === "s") newY = Math.min(0.9, prevY + MOVE_PERCENT_Y);
+                return newY;
+            });
+            sendMove();
+        };      
 
         const canvas = canvasRef.current;
         canvas.tabIndex = 0;
