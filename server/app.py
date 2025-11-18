@@ -1,6 +1,6 @@
 import os
 import uvicorn
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Depends, HTTPException
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException
 from jose import jwt, JWTError
 from dotenv import load_dotenv
 import json
@@ -10,11 +10,12 @@ SUPABASE_JWT_SECRET = os.getenv("SUPABASE_JWT_SECRET", "YOUR_SUPABASE_JWT_SECRET
 SUPABASE_URL = os.getenv("SUPABASE_URL", "YOUR_SUPABASE_URL_HERE")
 SUPABASE_AUDIENCE = "authenticated"
 ROOM_CAPACITY = 3 
+Y_SLOTS = [0.75, 0.81, 0.89]
 
 app = FastAPI()
 rooms = {}
-player_positions = {}
 player_ready = {}
+player_positions = {}
 
 def authenticate_websocket_jwt(token: str) -> dict:
     try:
@@ -107,31 +108,42 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
         room_id = await manager.connect(user_id, websocket)
         await manager.broadcast_message(room_id, json.dumps({"type": "join/left", "message": f"{username} joined the game"}))
 
+        # Set initial ready state
+        player_ready.setdefault(room_id, {})[user_email] = {"ready": False, "username": username}
+        await manager.broadcast_message(room_id, json.dumps({"type": "ready", "players": player_ready[room_id]}))
+
+        # Set initial position state
+        room_positions = player_positions.setdefault(room_id, {})
+        assigned_y = None
+        for y in Y_SLOTS:
+            if all(player["y"] != y for player in room_positions.values()):
+                assigned_y = y
+                break
+        player_positions.setdefault(room_id, {})[user_email] = {"x": 0.0, "y": assigned_y, "username": username}
+        await manager.broadcast_message(room_id, json.dumps({"type": "state_update", "players": player_positions[room_id]}))
+
         # Infinite loop to listen for incoming messages
         while True:
             data = await websocket.receive_text()
-            # print(f"Received from client: {data}")
             try: 
                 message = json.loads(data)
-
+                
+                # Update ready state dictionary
                 if message.get("type") == "ready":
                     email = message.get("email")
                     ready = message.get("ready")
                     if email is not None and ready is not None:
                         player_ready.setdefault(room_id, {})[email] = {"ready": ready, "username": username}
-                    ready_message = json.dumps({"type": "ready", "players": player_ready[room_id]})
-                    await manager.broadcast_message(room_id, ready_message)
+                    await manager.broadcast_message(room_id, json.dumps({"type": "ready", "players": player_ready[room_id]}))
 
+                # Update position state dictionary
                 if message.get("type") == "move":
-                    print(message)
                     email = message.get("email")
                     x = message.get("x") 
                     y = message.get("y")
                     if email is not None and x is not None and y is not None:
                         player_positions.setdefault(room_id, {})[email] = {"x": x, "y": y, "username": username}
-                    state_message = json.dumps({"type": "state_update", "players": player_positions[room_id]})
-                    print(state_message)
-                    await manager.broadcast_message(room_id, state_message)
+                    await manager.broadcast_message(room_id, json.dumps({"type": "state_update", "players": player_positions[room_id]}))
 
             except json.JSONDecodeError:
                 print("Received invalid JSON")
@@ -162,8 +174,7 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
                 player_positions.pop(room_id, None)
                 player_ready.pop(room_id, None)
 
-        state_message = json.dumps({"type": "state_update", "players": player_positions})
-        await manager.broadcast_message(room_id, state_message)
+        await manager.broadcast_message(room_id, json.dumps({"type": "state_update", "players": player_positions[room_id]}))
         await manager.broadcast_message(room_id, json.dumps({"type": "join/left", "message": f"{username} left the game"}))
         print(f"User {user_id} disconnected.")
     

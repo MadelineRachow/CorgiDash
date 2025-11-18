@@ -1,0 +1,6 @@
+server/.env
+client/.env
+.env
+client/node_modules/
+server/__pycache__
+server/__pycache__/app.cpython-313.pyc

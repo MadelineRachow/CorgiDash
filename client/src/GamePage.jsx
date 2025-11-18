@@ -47,12 +47,6 @@ function GamePage({supabase}) {
             ws.current.onopen = () => {
                 if (!isMounted) return;
                 console.log("Connected!");
-                const message = {type: "move", email: email, x: 0.00, y: 0.81};
-                const message2 = {type: "ready", email: email, ready: false}
-                if (ws.current?.readyState === WebSocket.OPEN) {
-                    ws.current.send(JSON.stringify(message));
-                    ws.current.send(JSON.stringify(message2));
-                };
             };
 
             // Websocket message event handler 

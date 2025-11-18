@@ -135,7 +135,7 @@ function GameCanvas({ws, userEmail, userX, userY, setX, setY, players, raceStart
             setY(prevY => {
                 let newY = prevY;
                 if (e.key === "ArrowUp" || e.key === "w") newY = Math.max(0.75, prevY - MOVE_PERCENT_Y);
-                if (e.key === "ArrowDown" || e.key === "s") newY = Math.min(0.9, prevY + MOVE_PERCENT_Y);
+                if (e.key === "ArrowDown" || e.key === "s") newY = Math.min(0.89, prevY + MOVE_PERCENT_Y);
                 return newY;
             });
             sendMove();
