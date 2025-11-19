@@ -11,7 +11,7 @@ SUPABASE_URL = os.getenv("SUPABASE_URL", "YOUR_SUPABASE_URL_HERE")
 SUPABASE_AUDIENCE = "authenticated"
 ROOM_CAPACITY = 3 
 Y_SLOTS = [0.75, 0.81, 0.89]
-FINISH_LINE = 20
+FINISH_LINE = 250
 # FINISH_LINES = {"short": 50, "medium": 250, "long": 500}
 
 app = FastAPI()
@@ -199,3 +199,6 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
         
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
+
+# uvicorn app:app --reload --host 0.0.0.0 --port 8000
+# ngrok http 8000

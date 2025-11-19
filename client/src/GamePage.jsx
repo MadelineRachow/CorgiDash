@@ -8,7 +8,8 @@ import "./App.css";
 function GamePage({supabase}) {
     const navigate = useNavigate();
     const ws = useRef(null);
-    const WEBSOCKET_URL = "ws://localhost:8000/ws/connect"; // "wss://NGROK_URL/ws/connect"
+    const WEBSOCKET_URL = "ws://localhost:8000/ws/connect"; 
+    // const WEBSOCKET_URL = "wss://adroit-conqueringly-ella.ngrok-free.dev/ws/connect";
 
     const [userEmail, setUserEmail] = useState('');
     const [x, setX] = useState(0.00);
