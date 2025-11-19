@@ -2,6 +2,7 @@ import {useEffect, useState, useRef} from 'react';
 import {useNavigate} from 'react-router-dom';
 import GameCanvas from "./GameCanvas";
 import Popup from "./Popup";
+import GameOverPopup from "./GameOverPopup";
 import "./App.css";
 
 function GamePage({supabase}) {
@@ -160,6 +161,7 @@ function GamePage({supabase}) {
                 setReadyToStart={setReadyToStart}
                 returnToLobby={returnToLobby}
             />
+            <GameOverPopup open={raceFinished}/>
             <GameCanvas 
                 ws={ws} 
                 userEmail={userEmail}
