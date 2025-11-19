@@ -148,7 +148,6 @@ function GamePage({supabase}) {
 
     return (
         <div>
-            <button onClick={returnToLobby}>Back to lobby</button>
             <p>Use W or ↑ to move upward</p>
             <p>Use S or ↓ to move downward</p>
             <div className="system-messages">
@@ -161,7 +160,13 @@ function GamePage({supabase}) {
                 setReadyToStart={setReadyToStart}
                 returnToLobby={returnToLobby}
             />
-            <GameOverPopup open={raceFinished}/>
+            <GameOverPopup 
+                open={raceFinished}
+                returnToLobby={returnToLobby}
+            />
+            {(raceStarted && !raceFinished) && (
+                <button onClick={returnToLobby}>Back to lobby</button>
+            )}
             <GameCanvas 
                 ws={ws} 
                 userEmail={userEmail}
