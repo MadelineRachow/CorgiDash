@@ -11,6 +11,8 @@ SUPABASE_URL = os.getenv("SUPABASE_URL", "YOUR_SUPABASE_URL_HERE")
 SUPABASE_AUDIENCE = "authenticated"
 ROOM_CAPACITY = 3 
 Y_SLOTS = [0.75, 0.81, 0.89]
+FINISH_LINE = 20
+# FINISH_LINES = {"short": 50, "medium": 250, "long": 500}
 
 app = FastAPI()
 rooms = {}
@@ -126,6 +128,7 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
         while True:
             data = await websocket.receive_text()
             try: 
+                # if any x in player_positions >= 20, broadcast type "finished", finished True or something (leaderboard handled in a microservice so dw abt it)
                 message = json.loads(data)
                 
                 # Update ready state dictionary
@@ -144,6 +147,16 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
                     if email is not None and x is not None and y is not None:
                         player_positions.setdefault(room_id, {})[email] = {"x": x, "y": y, "username": username}
                     await manager.broadcast_message(room_id, json.dumps({"type": "state_update", "players": player_positions[room_id]}))
+                    print(player_positions)
+
+                    # Finish line check
+                    finished_players = []
+                    for player_email, position in player_positions[room_id].items():
+                        if position["x"] >= FINISH_LINE:
+                            finished_players.append(player_email)
+                    
+                    if finished_players:
+                        await manager.broadcast_message(room_id, json.dumps({"type": "finished", "players": finished_players}))
 
             except json.JSONDecodeError:
                 print("Received invalid JSON")

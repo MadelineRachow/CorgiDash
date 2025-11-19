@@ -1,6 +1,6 @@
 import {useEffect, useRef, useMemo} from 'react';
 
-function GameCanvas({ws, userEmail, userX, userY, setX, setY, players, raceStarted}) {
+function GameCanvas({ws, userEmail, userX, userY, setX, setY, players, raceStarted, raceFinished}) {
     const canvasRef = useRef(null);
     const backgroundRef = useRef(new Image());
     const spriteRef = useRef(new Image());
@@ -51,7 +51,7 @@ function GameCanvas({ws, userEmail, userX, userY, setX, setY, players, raceStart
             
             // Draw background
             const background = backgroundRef.current;
-            const xOffset = raceStarted
+            const xOffset = (raceStarted && !raceFinished)
                 ? (userX * MOVE_PERCENT_X * background.width) % background.width
                 : 0;
             const scale = WORLD_HEIGHT / background.height;
@@ -107,7 +107,7 @@ function GameCanvas({ws, userEmail, userX, userY, setX, setY, players, raceStart
         // Start the animation loop
         animationID = requestAnimationFrame(draw);
         return () => cancelAnimationFrame(animationID);
-    }, [players, userX, userEmail, SPRITE_TYPE, sprites, raceStarted]);
+    }, [players, userX, userEmail, SPRITE_TYPE, sprites, raceStarted, raceFinished]);
 
     useEffect(() => {xRef.current = userX;}, [userX]);
     useEffect(() => {yRef.current = userY;}, [userY]);
@@ -125,16 +125,16 @@ function GameCanvas({ws, userEmail, userX, userY, setX, setY, players, raceStart
             };
         };
 
-        // Horizontal movement
+        // Horizontal movement (May want to later handle movement calculations on backend for security)
         const interval = setInterval(() => {
-            if (!raceStarted) return;
+            if (!raceStarted || raceFinished) return;
             setX(prevX => prevX + MOVE_PERCENT_X);
             sendMove();
         }, 16);
 
         // Vertical movement
         const handleMovement = (e) => {
-            if (!raceStarted) return;
+            if (!raceStarted || raceFinished) return;
 
             setY(prevY => {
                 let newY = prevY;
@@ -155,7 +155,7 @@ function GameCanvas({ws, userEmail, userX, userY, setX, setY, players, raceStart
             window.removeEventListener("keydown", handleMovement);
         };
     // eslint-disable-next-line
-    }, [userEmail, ws, raceStarted]);   
+    }, [userEmail, ws, raceStarted, raceFinished]);   
 
     // Render the canvas
     return (

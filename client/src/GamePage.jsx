@@ -19,6 +19,7 @@ function GamePage({supabase}) {
     const [readyToStart, setReadyToStart] = useState(false);
     const [countdown, setCountdown] = useState(null);
     const [raceStarted, setRaceStarted] = useState(false);
+    const [raceFinished, setRaceFinished] = useState(null);
 
     function returnToLobby() {
         navigate("/lobby");
@@ -65,7 +66,11 @@ function GamePage({supabase}) {
                     setTimeout(() => {
                         setSystemMessages(prev => prev.filter(msg => msg.id !== id));
                     }, 5000);
-                }
+                };
+                if (message.type === "finished") {
+                    setRaceFinished(true);
+                    console.log("Finished!")
+                };
             };
 
             // Websocket close event handler
@@ -164,6 +169,7 @@ function GamePage({supabase}) {
                 setY={setY} 
                 players={players}
                 raceStarted={raceStarted}
+                raceFinished={raceFinished}
             />
         </div>
     );    
