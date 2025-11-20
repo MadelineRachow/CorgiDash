@@ -140,7 +140,8 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
             if all(player["y"] != y for player in room_positions.values()):
                 assigned_y = y
                 break
-        player_positions.setdefault(room_id, {})[user_email] = {"x": 0.0, "y": assigned_y, "username": username}
+        # player_positions.setdefault(room_id, {})[user_email] = {"x": 0.0, "y": assigned_y, "username": username}
+        await update_player_position(room_id, user_email, 0.0, assigned_y, username)
         await manager.broadcast_message(room_id, json.dumps({"type": "state_update", "players": player_positions[room_id]}))
 
         # Infinite loop to listen for incoming messages
