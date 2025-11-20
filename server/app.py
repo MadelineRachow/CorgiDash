@@ -19,6 +19,25 @@ rooms = {}
 player_ready = {}
 player_positions = {}
 
+async def update_player_position(room_id, email, x, y, username):
+    # Update player positions and leaderboard
+    player_positions.setdefault(room_id, {})[email] = {"x": x, "y": y, "username": username}
+
+    ws = getattr(app.state, "leaderboard_ws", None)
+    if ws is None or room_id not in player_positions:
+        return
+    
+    payload = {
+        "type": "update_positions",
+        "room_id": room_id,
+        "players": player_positions[room_id]
+    }
+
+    try:
+        await ws.send_text(json.dumps(payload))
+    except Exception as e:
+        print(f"Error sending to leaderboard: {e}")
+    
 def authenticate_websocket_jwt(token: str) -> dict:
     try:
         # Decode and verify the JWT token
@@ -145,7 +164,8 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
                     x = message.get("x") 
                     y = message.get("y")
                     if email is not None and x is not None and y is not None:
-                        player_positions.setdefault(room_id, {})[email] = {"x": x, "y": y, "username": username}
+                        await update_player_position(room_id, email, x, y, username)
+                        # player_positions.setdefault(room_id, {})[email] = {"x": x, "y": y, "username": username}
                     await manager.broadcast_message(room_id, json.dumps({"type": "state_update", "players": player_positions[room_id]}))
                     print(player_positions)
 
@@ -196,6 +216,21 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
         manager.disconnect(user_id)
+
+@app.websocket("/ws/leaderboard") 
+async def leaderboard_endpoint(websocket: WebSocket):
+    await websocket.accept()
+    print("Leaderboard microservice connected")
+    app.state.leaderboard_ws = websocket
+
+    try:
+        while True:
+            data = await websocket.receive_text()
+            leaderboard = json.loads(data)
+            print(f"leaderboard: {leaderboard}")
+    except WebSocketDisconnect:
+        print("Leaderboard microservice disconnected")
+        app.state.leaderboard_ws = None
         
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)

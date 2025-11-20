@@ -46,7 +46,8 @@ function CreateAccountPage({supabase}) {
             alert("All fields required");
             return;
         }
-        const {error} = await supabase.auth.signUp({email, password, options: {data: {username}}});
+        const corgiSkin = "tri_no_tail";
+        const {error} = await supabase.auth.signUp({email, password, options: {data: {username, corgiSkin}}});
         if (error) {
             if (error.message.includes("User already registered")) {
                 alert(`${email} is already registered.`);
@@ -81,7 +82,7 @@ function ForgotPasswordPage({supabase}) {
             redirectTo: `${window.location.origin}/resetpassword`
         });
         if (error) alert (error.message);
-        else alert("Check your email for the password reset link");
+        else alert("If an account with that email exists, you will receive a password reset link.");
     };
 
     return (
