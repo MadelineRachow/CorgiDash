@@ -30,8 +30,8 @@ async def update_player_position(room_id, email, x, y, username):
     # Update player positions and leaderboard
     player_positions.setdefault(room_id, {})[email] = {"x": x, "y": y, "username": username}
 
-    ws = getattr(app.state, "leaderboard_ws", None)
-    if ws is None or room_id not in player_positions:
+    ws1 = getattr(app.state, "leaderboard_ws", None)
+    if ws1 is None or room_id not in player_positions:
         return
     
     current_time = time.time()
@@ -47,9 +47,9 @@ async def update_player_position(room_id, email, x, y, username):
     }
 
     try:
-        await ws.send_text(json.dumps(payload))
+        await ws1.send_text(json.dumps(payload))
     except Exception as e:
-        print(style_text(f"Error sending to leaderboard: {e}", "bold", "#FF0000"))
+        print(style_text(f"Error sending to microservices: {e}", "bold", "#FF0000"))
     
 def authenticate_websocket_jwt(token: str) -> dict:
     try:
@@ -243,12 +243,33 @@ async def leaderboard_endpoint(websocket: WebSocket):
         while True:
             data = await websocket.receive_text()
             leaderboard = json.loads(data)
+            room_id = leaderboard.get("room_id")
+            leaderboards[room_id] = leaderboard["players"]
             print(style_text("Leaderboard:", "bold", "#FFFF9C"))
             print(style_text(json.dumps(leaderboard, indent=4), "normal", "#FFFFD7"))
+            print(f"Leaderboards dict: {leaderboards}")
+
     except WebSocketDisconnect:
         print(style_text("Leaderboard microservice disconnected!", "bold", "#FFFF9C"))
         app.state.leaderboard_ws = None
-        
+
+@app.websocket("/ws/object_generator")
+async def generator_endpoint(websocket: WebSocket):
+    await websocket.accept()
+    print(style_text("Object generator microservice connected!", "bold", "#A4FF9C"))
+    app.state.generator_ws = websocket
+    
+    await websocket.send_text(json.dumps({"type": "generation_coordinates", "Y_SLOTS": Y_SLOTS, "FINISH_LINE": FINISH_LINE}))
+
+    try:
+        while True:
+            data = await websocket.receive_text()
+            objects = json.loads(data)
+            print(objects)
+    except WebSocketDisconnect:
+        print(style_text("Object generator microservice disconnected!", "bold", "#A4FF9C"))
+        app.state.generator_ws = None
+
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
 
