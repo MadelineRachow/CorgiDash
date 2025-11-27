@@ -1,6 +1,10 @@
 import asyncio
 import websockets
 import json
+import os
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+from style_console_text import style_text
 
 async def main():
     """
@@ -13,36 +17,17 @@ async def main():
         while True:
             msg = await websocket.recv()
             player_positions = json.loads(msg)
-            # print("Received from backend:", player_positions)
-            print(json.dumps(player_positions, indent=4))
+            print(style_text("Server:", "bold", "#FFFF9C"))
+            print(style_text(json.dumps(player_positions, indent=4), "normal", "#FFFFD7"))
 
-
-            # ranking_list = []
-
-            # # Convert players dict → list for sorting
-            # for email, info in player_positions["players"].items():
-            #     ranking_list.append({
-            #         "email": email,
-            #         "username": info["username"],
-            #         "x": info["x"],
-            #         "y": info["y"]
-            #     })
-
-            # # Sort players by x position (descending → closer to finish)
-            # ranking_list.sort(key=lambda p: p["x"], reverse=True)
-
-            # # Assign ranks
-            # for i, player in enumerate(ranking_list, start=1):
-            #     player["rank"] = i
-
-            # # Build leaderboard response
-            # leaderboard = {
-            #     "type": "leaderboard_update",
-            #     "ranking": ranking_list
-            # }
-            # -----------------------------------------------------------
+            sorted_players = sorted(player_positions["players"].items(), key=lambda item: item[1]["x"], reverse=True)
+            for rank, (email, data) in enumerate(sorted_players, start=1):
+                data["ranking"] = rank
+            player_positions["players"] = dict(sorted_players)
 
             leaderboard = player_positions
+            leaderboard["type"] = "update_leaderboard"
+
             await websocket.send(json.dumps(leaderboard))
             await asyncio.sleep(0.05)
 

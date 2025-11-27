@@ -1,9 +1,13 @@
 import os
+import sys
 import uvicorn
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException
 from jose import jwt, JWTError
 from dotenv import load_dotenv
 import json
+import time
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+from style_console_text import style_text
 
 load_dotenv()
 SUPABASE_JWT_SECRET = os.getenv("SUPABASE_JWT_SECRET", "YOUR_SUPABASE_JWT_SECRET_HERE") 
@@ -13,11 +17,14 @@ ROOM_CAPACITY = 3
 Y_SLOTS = [0.75, 0.81, 0.89]
 FINISH_LINE = 250
 # FINISH_LINES = {"short": 50, "medium": 250, "long": 500}
+LEADERBOARD_UPDATE_INTERVAL = 0.1
 
 app = FastAPI()
 rooms = {}
 player_ready = {}
 player_positions = {}
+leaderboards = {}
+room_last_leaderboard_update: dict[str, float] = {}
 
 async def update_player_position(room_id, email, x, y, username):
     # Update player positions and leaderboard
@@ -26,6 +33,12 @@ async def update_player_position(room_id, email, x, y, username):
     ws = getattr(app.state, "leaderboard_ws", None)
     if ws is None or room_id not in player_positions:
         return
+    
+    current_time = time.time()
+    last_update = room_last_leaderboard_update.get(room_id, 0)
+    if current_time - last_update < LEADERBOARD_UPDATE_INTERVAL:
+        return
+    room_last_leaderboard_update[room_id] = current_time
     
     payload = {
         "type": "update_positions",
@@ -36,7 +49,7 @@ async def update_player_position(room_id, email, x, y, username):
     try:
         await ws.send_text(json.dumps(payload))
     except Exception as e:
-        print(f"Error sending to leaderboard: {e}")
+        print(style_text(f"Error sending to leaderboard: {e}", "bold", "#FF0000"))
     
 def authenticate_websocket_jwt(token: str) -> dict:
     try:
@@ -53,12 +66,12 @@ def authenticate_websocket_jwt(token: str) -> dict:
             raise JWTError("Invalid token: Issuer mismatch.")
 
         # Return decoded token payload
-        print(f"User authenticated: {payload['sub']}")
+        print(style_text(f"User authenticated: {payload['sub']}", "bold", "#FFFFFF"))
         return payload
     
     # Raise 401 Unauthorized error if token is invalid
     except JWTError as e:
-        print(f"JWT Error: {e}")
+        print(style_text(f"JWT Error: {e}", "bold", "#FF0000"))
         raise HTTPException(status_code=401, detail=f"Authentication failed: {e}")
 
 class ConnectionManager:
@@ -86,14 +99,14 @@ class ConnectionManager:
         # Accept WebSocket
         await websocket.accept()
         self.active_connections[user_id] = websocket
-        print(f"[User joined] Active connections: {len(self.active_connections)} | {room_id}")
+        print(style_text(f"[User joined] Active connections: {len(self.active_connections)} | {room_id}", "bold", "#FFFFFF"))
         return room_id
 
     # Removes user from active connections dictionary when they disconnect
     def disconnect(self, user_id: str):
         if user_id in self.active_connections:
             del self.active_connections[user_id]
-        print(f"[User disconnected] Active connections: {len(self.active_connections)}")
+        print(style_text(f"[User disconnected] Active connections: {len(self.active_connections)}", "bold", "#FFFFFF"))
 
     # Sends message to one specific user
     async def send_personal_message(self, message: str, user_id: str):
@@ -168,7 +181,8 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
                         await update_player_position(room_id, email, x, y, username)
                         # player_positions.setdefault(room_id, {})[email] = {"x": x, "y": y, "username": username}
                     await manager.broadcast_message(room_id, json.dumps({"type": "state_update", "players": player_positions[room_id]}))
-                    print(player_positions)
+                    print(style_text("Client:", "bold", "#FF9C9C"))
+                    print(style_text(json.dumps(player_positions, indent=4), "normal", "#FFD7D7"))
 
                     # Finish line check
                     finished_players = []
@@ -180,11 +194,11 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
                         await manager.broadcast_message(room_id, json.dumps({"type": "finished", "players": finished_players}))
 
             except json.JSONDecodeError:
-                print("Received invalid JSON")
+                print(style_text("Received invalid JSON", "bold", "#FF0000"))
     
     # If JWT fails validation, raise 1008 Policy Violation error
     except HTTPException as e:
-        print(f"Connection attempt denied: {e.detail}")
+        print(style_text(f"Connection attempt denied: {e.detail}", "bold", "#FF0000"))
         await websocket.close(code=1008, reason=e.detail) 
         return
 
@@ -207,30 +221,32 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
                 del rooms[room_id] 
                 player_positions.pop(room_id, None)
                 player_ready.pop(room_id, None)
+                room_last_leaderboard_update.pop(room_id, None)
 
         if room_id in player_positions:
             await manager.broadcast_message(room_id, json.dumps({"type": "state_update", "players": player_positions[room_id]}))
             await manager.broadcast_message(room_id, json.dumps({"type": "join/left", "message": f"{username} left the game"}))
-        print(f"User {user_id} disconnected.")
+        print(style_text(f"User {user_id} disconnected.", "normal", "#FFFFFF"))
     
     # Catches any unexpected errors
     except Exception as e:
-        print(f"An unexpected error occurred: {e}")
+        print(style_text(f"An unexpected error occurred: {e}", "bold", "#FF0000"))
         manager.disconnect(user_id)
 
 @app.websocket("/ws/leaderboard") 
 async def leaderboard_endpoint(websocket: WebSocket):
     await websocket.accept()
-    print("Leaderboard microservice connected")
+    print(style_text("Leaderboard microservice connected!", "bold", "#FFFF9C"))
     app.state.leaderboard_ws = websocket
 
     try:
         while True:
             data = await websocket.receive_text()
             leaderboard = json.loads(data)
-            print(f"leaderboard: {leaderboard}")
+            print(style_text("Leaderboard:", "bold", "#FFFF9C"))
+            print(style_text(json.dumps(leaderboard, indent=4), "normal", "#FFFFD7"))
     except WebSocketDisconnect:
-        print("Leaderboard microservice disconnected")
+        print(style_text("Leaderboard microservice disconnected!", "bold", "#FFFF9C"))
         app.state.leaderboard_ws = None
         
 if __name__ == "__main__":
