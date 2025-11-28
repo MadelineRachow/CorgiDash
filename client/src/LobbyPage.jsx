@@ -16,7 +16,11 @@ function LobbyPage({supabase}) {
         getUser();
     }, [supabase]);
 
-     
+
+    function customizePageButton() {
+        navigate("/customizecorgi");
+    };
+
     function joinGameButton() {
         navigate("/game");
     };
@@ -34,7 +38,8 @@ function LobbyPage({supabase}) {
     return (
         <div>
             <h3>Username: {username}</h3>
-            <button onClick={joinGameButton}>Join Game</button>
+            <button onClick={customizePageButton}>Customize your corgi</button>
+            <button onClick={joinGameButton}>Join game</button>
             <button onClick={helpPageButton}>Help information page</button>
             <button onClick={signOutButton}>Sign out</button>
         </div>

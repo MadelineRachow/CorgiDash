@@ -3,6 +3,7 @@ import {BrowserRouter as Router, Routes, Route, Navigate} from 'react-router-dom
 import {useState, useEffect} from "react";
 import {LoginPage, CreateAccountPage, ForgotPasswordPage, ResetPasswordPage} from "./LoginPage";
 import LobbyPage from "./LobbyPage";
+import CustomizePage from "./CustomizePage";
 import GamePage from "./GamePage";
 import HelpPage from "./HelpPage";
 import './App.css';
@@ -54,6 +55,7 @@ function App() {
                 <Route path="/forgotpassword" element={user ? <Navigate to="/lobby" replace/> : <ForgotPasswordPage supabase={supabase}/>}/>
                 <Route path="/resetpassword" element={<ResetPasswordPage supabase={supabase} />} />
                 <Route path="/lobby" element={<ProtectedRoute user={user}><LobbyPage supabase={supabase}/></ProtectedRoute>}/>
+                <Route path="/customizecorgi" element={<ProtectedRoute user={user}><CustomizePage/></ProtectedRoute>}/>
                 <Route path="/game" element={<ProtectedRoute user={user}><GamePage supabase={supabase}/></ProtectedRoute>}/>
                 <Route path="/help" element={<ProtectedRoute user={user}><HelpPage/></ProtectedRoute>}/>
                 <Route path="*" element={<Navigate to={user ? "/lobby" : "/login"} replace/>}/>
