@@ -21,8 +21,16 @@ async def main():
             print(style_text(json.dumps(player_positions, indent=4), "normal", "#FFFFD7"))
 
             sorted_players = sorted(player_positions["players"].items(), key=lambda item: item[1]["x"], reverse=True)
-            for rank, (email, data) in enumerate(sorted_players, start=1):
+            prev_x = None
+            rank = 0
+            dense_rank = 0
+
+            for email, data in sorted_players:
+                dense_rank += 1
+                if prev_x is None or data["x"] < prev_x:
+                    rank = dense_rank
                 data["ranking"] = rank
+                prev_x = data["x"]
             player_positions["players"] = dict(sorted_players)
 
             leaderboard = player_positions

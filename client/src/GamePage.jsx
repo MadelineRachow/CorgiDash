@@ -22,7 +22,8 @@ function GamePage({supabase}) {
     const [countdown, setCountdown] = useState(null);
     const [raceStarted, setRaceStarted] = useState(false);
     const [raceFinished, setRaceFinished] = useState(null);
-
+    const [leaderboard, setLeaderboard] = useState([]);
+ 
     function returnToLobby() {
         navigate("/lobby");
     };
@@ -61,6 +62,9 @@ function GamePage({supabase}) {
                 };
                 if (message.type === "state_update") {
                     setPlayers(message.players);
+                };
+                if (message.type === "leaderboard") {
+                    setLeaderboard(message.players);
                 };
                 if (message.type === "join/left") {
                     const id = Date.now();
@@ -161,6 +165,19 @@ function GamePage({supabase}) {
                 setReadyToStart={setReadyToStart}
                 returnToLobby={returnToLobby}
             />
+            {(raceStarted && !raceFinished) && (
+                <div>
+                    <p>Leaderboard</p>
+                    {Object.values(leaderboard)
+                        .sort((a, b) => a.ranking - b.ranking)
+                        .map((player, index) => (
+                            <li key={player.username || index}>
+                                {player.username} {player.ranking}
+                            </li>
+                        ))
+                    }
+                </div>
+            )}
             <GameOverPopup 
                 open={raceFinished}
                 returnToLobby={returnToLobby}

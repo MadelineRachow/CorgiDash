@@ -32,8 +32,8 @@ async def update_player_position(room_id, email, x, y, username):
     player_positions.setdefault(room_id, {})[email] = {"x": x, "y": y, "username": username}
 
     ws1 = getattr(app.state, "leaderboard_ws", None)
-    ws2 = getattr(app.state, "generator_ws", None)
-    if ws1 is None or ws2 is None or room_id not in player_positions:
+    # ws2 = getattr(app.state, "generator_ws", None)
+    if room_id not in player_positions:
         return
     
     current_time = time.time()
@@ -50,9 +50,15 @@ async def update_player_position(room_id, email, x, y, username):
 
     try:
         await ws1.send_text(json.dumps(payload))
-        await ws2.send_text(json.dumps(payload))
     except Exception as e:
-        print(style_text(f"Error sending to microservices: {e}", "bold", "#FF0000"))
+        print(style_text(f"Error:", "bold", "#FF0000"))
+        print(style_text(f"Failed to send payload to leaderboard microservice: {e}", "normal", "#FF5858"))
+
+    # try:
+    #     await ws2.send_text(json.dumps(payload))
+    # except Exception as e:
+    #     print(style_text(f"Error:", "bold", "#FF0000"))
+    #     print(style_text(f"Failed to send payload to object generator microservice: {e}", "normal", "#FF5858"))
     
 def authenticate_websocket_jwt(token: str) -> dict:
     try:
@@ -159,6 +165,8 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
         # player_positions.setdefault(room_id, {})[user_email] = {"x": 0.0, "y": assigned_y, "username": username}
         await update_player_position(room_id, user_email, 0.0, assigned_y, username)
         await manager.broadcast_message(room_id, json.dumps({"type": "state_update", "players": player_positions[room_id]}))
+        if room_id in leaderboards:
+            await manager.broadcast_message(room_id, json.dumps({"type": "leaderboard", "players": leaderboards[room_id]}))
 
         # Infinite loop to listen for incoming messages
         while True:
@@ -184,6 +192,8 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
                         await update_player_position(room_id, email, x, y, username)
                         # player_positions.setdefault(room_id, {})[email] = {"x": x, "y": y, "username": username}
                     await manager.broadcast_message(room_id, json.dumps({"type": "state_update", "players": player_positions[room_id]}))
+                    if room_id in leaderboards:
+                        await manager.broadcast_message(room_id, json.dumps({"type": "leaderboard", "players": leaderboards[room_id]}))
                     print(style_text("Client:", "bold", "#FF9C9C"))
                     print(style_text(json.dumps(player_positions, indent=4), "normal", "#FFD7D7"))
 
