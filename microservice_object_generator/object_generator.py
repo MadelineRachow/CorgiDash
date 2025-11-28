@@ -12,7 +12,7 @@ from style_console_text import style_text
 Y_SLOTS = []
 FINISH_LINE = 0
 SPAWN_AHEAD = 30
-MIN_SPACING = 5
+MIN_SPACING = 50
 MAX_OBJECTS_PER_TICK = 2
 rooms_active_objects = {}
 
@@ -22,9 +22,11 @@ def compute_player_ranks(player_positions):
         data["ranking"] = rank
     return player_positions
 
-def is_valid_position(new_x, room_id):
-    return all(abs(new_x - obj["x"]) >= MIN_SPACING for obj in rooms_active_objects.get(room_id, []))
-
+def is_valid_position(new_x, new_y, room_id):
+    return all(
+        abs(new_x - obj["x"]) >= MIN_SPACING or obj["y"] != new_y
+        for obj in rooms_active_objects.get(room_id, [])
+    )
 
 def generate_object(player_rank, num_players, furthest_x, room_id):
     # boost_chance = player_rank / num_players  
@@ -37,14 +39,14 @@ def generate_object(player_rank, num_players, furthest_x, room_id):
     #     k=1
     # )[0]
 
-    x = random.uniform(furthest_x, min(furthest_x + SPAWN_AHEAD, FINISH_LINE))
+    # x = random.uniform(furthest_x, min(furthest_x + SPAWN_AHEAD, FINISH_LINE))
+    x = random.uniform(furthest_x + SPAWN_AHEAD, furthest_x + 100)
+    y = random.choice(Y_SLOTS)
 
     attempt = 0
-    while not is_valid_position(x, room_id) and attempt < 5:
+    while not is_valid_position(x, y, room_id) and attempt < 5:
         x = random.uniform(furthest_x, min(furthest_x + SPAWN_AHEAD, FINISH_LINE))
         attempt += 1
-
-    y = random.choice(Y_SLOTS)
 
     return {
         "id": str(uuid.uuid4()),
@@ -79,6 +81,9 @@ async def main():
             if server_msg["type"] == "generation_coordinates":
                 Y_SLOTS = server_msg["Y_SLOTS"]
                 FINISH_LINE = server_msg["FINISH_LINE"]
+            elif server_msg["type"] == "room_closed":
+                room_id = server_msg["room_id"]
+                rooms_active_objects.pop(room_id, None)
             else:
                 player_positions = compute_player_ranks(server_msg)
                 prune_objects(player_positions, room_id)
@@ -94,6 +99,6 @@ async def main():
                         rooms_active_objects[room_id].append(new_object)
                         await websocket.send(json.dumps({"room_id": room_id, "active_objects": rooms_active_objects[room_id]}))
 
-            await asyncio.sleep(0.05)
+            await asyncio.sleep(0.5)
 
 asyncio.run(main())    

@@ -1,6 +1,6 @@
 import {useEffect, useRef, useMemo} from 'react';
 
-function GameCanvas({ws, userEmail, userX, userY, setX, setY, players, raceStarted, raceFinished}) {
+function GameCanvas({ws, userEmail, userX, userY, setX, setY, players, raceStarted, raceFinished, objects}) {
     const canvasRef = useRef(null);
     const backgroundRef = useRef(new Image());
     const spriteRef = useRef(new Image());
@@ -39,6 +39,7 @@ function GameCanvas({ws, userEmail, userX, userY, setX, setY, players, raceStart
         const WORLD_HEIGHT = 1080;
         const SPRITE_SIZE = 64; // Height and width of single sprite frame
         const SPRITE_SCALE = 3;
+        const OBJECT_SIZE = 32;
 
         let animationID;
 
@@ -101,13 +102,46 @@ function GameCanvas({ws, userEmail, userX, userY, setX, setY, players, raceStart
                 context.fillText(player.username, px, py - (SPRITE_SIZE * SPRITE_SCALE) / 2 - 4);
             });
 
+            // Draw speed boosts and obstacles
+            objects.forEach(obj => {
+                // Compute screen X relative to player anchor
+                const objScreenX = (obj.x - userX) * MOVE_PERCENT_X * backgroundRef.current.width + ANCHOR_X * WORLD_WIDTH;
+                const objScreenY = obj.y * WORLD_HEIGHT;
+
+                // Only draw if on screen
+                if (objScreenX + OBJECT_SIZE/2 >= 0 && objScreenX - OBJECT_SIZE/2 <= WORLD_WIDTH) {
+                    context.fillStyle = "red"; // simple square color
+                    context.fillRect(
+                        objScreenX - OBJECT_SIZE / 2,
+                        objScreenY - OBJECT_SIZE / 2 + 30,
+                        OBJECT_SIZE,
+                        OBJECT_SIZE 
+                    );
+                }
+            }); 
+
+            objects.forEach(obj => {
+                let hit = false;
+
+                if (obj.y === 0.75 && userY >= 0.75 && userY <= 0.80) hit = true;
+                if (obj.y === 0.81 && userY >= 0.79 && userY <= 0.87) hit = true;
+                if (obj.y === 0.89 && userY >= 0.86 && userY <= 0.89) hit = true;
+
+                // Optional: small margin for x collision
+                const objLeft = obj.x;
+                const objRight = obj.x + 0.05; // adjust as needed
+                if (hit && userX >= objLeft && userX <= objRight) {
+                    console.log(`Hit object at y=${obj.y}, x=${obj.x}`);
+                }
+            });
+
             // Request the next animation frame
             animationID = requestAnimationFrame(draw);
         }
         // Start the animation loop
         animationID = requestAnimationFrame(draw);
         return () => cancelAnimationFrame(animationID);
-    }, [players, userX, userEmail, SPRITE_TYPE, sprites, raceStarted, raceFinished]);
+    }, [players, userX, userY, userEmail, SPRITE_TYPE, sprites, raceStarted, raceFinished, objects]);
 
     useEffect(() => {xRef.current = userX;}, [userX]);
     useEffect(() => {yRef.current = userY;}, [userY]);

@@ -23,6 +23,23 @@ function GamePage({supabase}) {
     const [raceStarted, setRaceStarted] = useState(false);
     const [raceFinished, setRaceFinished] = useState(null);
     const [leaderboard, setLeaderboard] = useState([]);
+    // const [objects, setObjects] = useState([]);
+    const objects = [
+        { type: "boost", x: 5, y: 0.81 },
+        { type: "obstacle", x: 10, y: 0.75 },
+        { type: "boost", x: 15, y: 0.89 },
+        { type: "obstacle", x: 20, y: 0.81 },
+
+        { type: "boost", x: 25, y: 0.75 },
+        { type: "obstacle", x: 30, y: 0.89 },
+        { type: "boost", x: 35, y: 0.81 },
+        { type: "obstacle", x: 40, y: 0.75 },
+
+        { type: "boost", x: 45, y: 0.89 },
+        { type: "obstacle", x: 50, y: 0.81 },
+        { type: "boost", x: 55, y: 0.75 },
+        { type: "obstacle", x: 60, y: 0.89 }
+    ];
  
     function returnToLobby() {
         navigate("/lobby");
@@ -63,6 +80,9 @@ function GamePage({supabase}) {
                 if (message.type === "state_update") {
                     setPlayers(message.players);
                 };
+                // if (message.type === "objects") {
+                //     setObjects(message.active_objects);
+                // };
                 if (message.type === "leaderboard") {
                     setLeaderboard(message.players);
                 };
@@ -195,6 +215,7 @@ function GamePage({supabase}) {
                 players={players}
                 raceStarted={raceStarted}
                 raceFinished={raceFinished}
+                objects={objects}
             />
         </div>
     );    
