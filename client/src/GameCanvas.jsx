@@ -110,7 +110,7 @@ function GameCanvas({ws, userEmail, userX, userY, setX, setY, players, raceStart
 
                 // Only draw if on screen
                 if (objScreenX + OBJECT_SIZE/2 >= 0 && objScreenX - OBJECT_SIZE/2 <= WORLD_WIDTH) {
-                    context.fillStyle = "red"; // simple square color
+                    context.fillStyle = obj.type === "boost" ? "green" : "red";
                     context.fillRect(
                         objScreenX - OBJECT_SIZE / 2,
                         objScreenY - OBJECT_SIZE / 2 + 30,
@@ -120,6 +120,7 @@ function GameCanvas({ws, userEmail, userX, userY, setX, setY, players, raceStart
                 }
             }); 
 
+            // Handle collision with speed boosts and obstacles
             objects.forEach(obj => {
                 let hit = false;
 
@@ -127,9 +128,9 @@ function GameCanvas({ws, userEmail, userX, userY, setX, setY, players, raceStart
                 if (obj.y === 0.81 && userY >= 0.79 && userY <= 0.87) hit = true;
                 if (obj.y === 0.89 && userY >= 0.86 && userY <= 0.89) hit = true;
 
-                // Optional: small margin for x collision
+                // Small margin for x collision
                 const objLeft = obj.x;
-                const objRight = obj.x + 0.05; // adjust as needed
+                const objRight = obj.x + 0.05; 
                 if (hit && userX >= objLeft && userX <= objRight) {
                     console.log(`Hit object at y=${obj.y}, x=${obj.x}`);
                 }

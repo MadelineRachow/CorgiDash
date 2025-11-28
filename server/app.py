@@ -28,6 +28,9 @@ room_last_leaderboard_update: dict[str, float] = {}
 room_objects = {}
 
 async def update_player_position(room_id, email, x, y, username):
+    if room_id not in rooms or len(rooms[room_id]) == 0:
+        return
+    
     # Update player positions and leaderboard
     player_positions.setdefault(room_id, {})[email] = {"x": x, "y": y, "username": username}
 
@@ -235,6 +238,11 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
                 player_ready.pop(room_id, None)
                 leaderboards.pop(room_id, None)
                 room_last_leaderboard_update.pop(room_id, None)
+                room_objects.pop(room_id, None)
+
+                ws2 = getattr(app.state, "generator_ws", None)
+                if ws2:
+                    await ws2.send_text(json.dumps({"type": "room_deleted", "room_id": room_id}))
 
         if room_id in player_positions:
             await manager.broadcast_message(room_id, json.dumps({"type": "state_update", "players": player_positions[room_id]}))
@@ -283,10 +291,12 @@ async def generator_endpoint(websocket: WebSocket):
             if room_id not in room_objects:
                 room_objects[room_id] = []
             room_objects[room_id].append(new_obj)
+
+            await manager.broadcast_message(room_id, json.dumps({"type": "objects", "objects": room_objects[room_id]}))
     
             print(style_text("Object Generator:", "bold", "#A4FF9C"))
             print(style_text(json.dumps(msg, indent=4), "normal", "#DAFFD7"))
-            
+
     except WebSocketDisconnect:
         print(style_text("Object generator microservice disconnected!", "bold", "#A4FF9C"))
         app.state.generator_ws = None
