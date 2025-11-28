@@ -11,93 +11,63 @@ from style_console_text import style_text
 
 Y_SLOTS = []
 FINISH_LINE = 0
-SPAWN_AHEAD = 30
-MIN_SPACING = 50
-MAX_OBJECTS_PER_TICK = 2
-rooms_active_objects = {}
-
-def compute_player_ranks(player_positions):
-    sorted_players = sorted(player_positions["players"].items(), key=lambda item: item[1]["x"], reverse=True)
-    for rank, (email, data) in enumerate(sorted_players, start=1):
-        data["ranking"] = rank
-    return player_positions
-
-def is_valid_position(new_x, new_y, room_id):
-    return all(
-        abs(new_x - obj["x"]) >= MIN_SPACING or obj["y"] != new_y
-        for obj in rooms_active_objects.get(room_id, [])
-    )
-
-def generate_object(player_rank, num_players, furthest_x, room_id):
-    # boost_chance = player_rank / num_players  
-    # obstacle_chance = 1 - boost_chance
-
-    object_type = random.choice(["boost", "obstacle"])
-    # object_type = random.choices(
-    #     ["boost", "obstacle"],
-    #     weights=[boost_chance, obstacle_chance],
-    #     k=1
-    # )[0]
-
-    # x = random.uniform(furthest_x, min(furthest_x + SPAWN_AHEAD, FINISH_LINE))
-    x = random.uniform(furthest_x + SPAWN_AHEAD, furthest_x + 100)
-    y = random.choice(Y_SLOTS)
-
-    attempt = 0
-    while not is_valid_position(x, y, room_id) and attempt < 5:
-        x = random.uniform(furthest_x, min(furthest_x + SPAWN_AHEAD, FINISH_LINE))
-        attempt += 1
-
-    return {
-        "id": str(uuid.uuid4()),
-        "type": object_type,
-        "x": x,
-        "y": y,
-        "active": True,
-        "spawned_at": datetime.now().isoformat()
-    }
-
-def prune_objects(player_positions, room_id):
-    players = player_positions["players"].values() 
-    min_x = min(p["x"] for p in players)
-    rooms_active_objects[room_id] = [obj for obj in rooms_active_objects.get(room_id, []) if obj["x"] >= min_x - 2]
+MIN_SPACING = 5
+MAX_SPACING = 10
+PLAYER_BUFFER = 2.5
+LOOKAHEAD = 25
 
 async def main():
     global Y_SLOTS
     global FINISH_LINE
     uri = "ws://localhost:8000/ws/object_generator"
+    objects = []
 
     async with websockets.connect(uri) as websocket:
         while True:
             msg = await websocket.recv()
             server_msg = json.loads(msg)
-            room_id = server_msg.get("room_id")
             print(style_text("Server:", "bold", "#A4FF9C"))
             print(style_text(json.dumps(server_msg, indent=4), "normal", "#DAFFD7"))
-
-            if room_id not in rooms_active_objects:
-                rooms_active_objects[room_id] = []
 
             if server_msg["type"] == "generation_coordinates":
                 Y_SLOTS = server_msg["Y_SLOTS"]
                 FINISH_LINE = server_msg["FINISH_LINE"]
-            elif server_msg["type"] == "room_closed":
+            elif server_msg["type"] == "update_positions":
+                player_positions = server_msg["players"]
                 room_id = server_msg["room_id"]
-                rooms_active_objects.pop(room_id, None)
-            else:
-                player_positions = compute_player_ranks(server_msg)
-                prune_objects(player_positions, room_id)
-                players = list(player_positions["players"].values())  
-                furthest_x = max(p["x"] for p in players)
-                num_players = len(players)
 
-                spawn_chance = 0.5
-                for _ in range(MAX_OBJECTS_PER_TICK):
-                    if random.random() < spawn_chance:
-                        player = random.choice(players) 
-                        new_object = generate_object(player["ranking"], num_players, furthest_x, room_id)
-                        rooms_active_objects[room_id].append(new_object)
-                        await websocket.send(json.dumps({"room_id": room_id, "active_objects": rooms_active_objects[room_id]}))
+                # Flatten player positions and determine trailing/leading player
+                players = [(pdata["x"], email) for email, pdata in player_positions.items()]
+                trailing_player = min(players, key=lambda p: p[0])
+                leading_player = max(players, key=lambda p: p[0])
+
+                max_generated_x = objects[-1]["x"] if objects else 0
+                target_x = leading_player[0] + LOOKAHEAD
+
+                # Pre-generate objects up to LOOKAHEAD
+                next_x = max_generated_x + random.uniform(MIN_SPACING, MAX_SPACING)
+                while next_x < target_x and next_x < FINISH_LINE:
+                    y = random.choice(Y_SLOTS)
+                    # Avoid spawning on top of players
+                    if all(abs(next_x - px) > PLAYER_BUFFER for px, _ in players):
+                        # Bias type
+                        obj_type = random.choices(
+                            ["boost", "obstacle"],
+                            weights=[0.6, 0.4] if next_x < trailing_player[0] + 10 else [0.4, 0.6]
+                        )[0]
+                        new_obj = {"type": obj_type, "x": next_x, "y": y}
+                        objects.append(new_obj)
+                        await websocket.send(json.dumps({"type": "spawn_object", "room_id": room_id, "object": new_obj}))
+                    next_x += random.uniform(MIN_SPACING, MAX_SPACING)
+
+                # Reactive boost for trailing player (spawn occasionally)
+                if random.random() < 0.3:  # 30% chance per tick
+                    reactive_x = trailing_player[0] + random.uniform(5, 10)
+                    if all(abs(reactive_x - obj["x"]) > MIN_SPACING for obj in objects):
+                        y = random.choice(Y_SLOTS)
+                        reactive_obj = {"type": "boost", "x": reactive_x, "y": y}
+                        objects.append(reactive_obj)
+                        await websocket.send(json.dumps({"type": "spawn_object", "room_id": room_id, "object": reactive_obj}))
 
             await asyncio.sleep(0.5)
 

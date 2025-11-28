@@ -25,14 +25,14 @@ player_ready = {}
 player_positions = {}
 leaderboards = {}
 room_last_leaderboard_update: dict[str, float] = {}
-# active_objects = {}
+room_objects = {}
 
 async def update_player_position(room_id, email, x, y, username):
     # Update player positions and leaderboard
     player_positions.setdefault(room_id, {})[email] = {"x": x, "y": y, "username": username}
 
-    ws1 = getattr(app.state, "leaderboard_ws", None)
-    # ws2 = getattr(app.state, "generator_ws", None)
+    # ws1 = getattr(app.state, "leaderboard_ws", None)
+    ws2 = getattr(app.state, "generator_ws", None)
     if room_id not in player_positions:
         return
     
@@ -54,11 +54,11 @@ async def update_player_position(room_id, email, x, y, username):
     #     print(style_text(f"Error:", "bold", "#FF0000"))
     #     print(style_text(f"Failed to send payload to leaderboard microservice: {e}", "normal", "#FF5858"))
 
-    # try:
-    #     await ws2.send_text(json.dumps(payload))
-    # except Exception as e:
-    #     print(style_text(f"Error:", "bold", "#FF0000"))
-    #     print(style_text(f"Failed to send payload to object generator microservice: {e}", "normal", "#FF5858"))
+    try:
+        await ws2.send_text(json.dumps(payload))
+    except Exception as e:
+        print(style_text(f"Error:", "bold", "#FF0000"))
+        print(style_text(f"Failed to send payload to object generator microservice: {e}", "normal", "#FF5858"))
     
 def authenticate_websocket_jwt(token: str) -> dict:
     try:
@@ -190,12 +190,9 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
                     y = message.get("y")
                     if email is not None and x is not None and y is not None:
                         await update_player_position(room_id, email, x, y, username)
-                        # player_positions.setdefault(room_id, {})[email] = {"x": x, "y": y, "username": username}
                     await manager.broadcast_message(room_id, json.dumps({"type": "state_update", "players": player_positions[room_id]}))
                     if room_id in leaderboards:
                         await manager.broadcast_message(room_id, json.dumps({"type": "leaderboard", "players": leaderboards[room_id]}))
-                    # if room_id in active_objects:
-                    #     await manager.broadcast_message(room_id, json.dumps({"type": "objects", "active_objects": active_objects[room_id]}))
                     # print(style_text("Client:", "bold", "#FF9C9C"))
                     # print(style_text(json.dumps(player_positions, indent=4), "normal", "#FFD7D7"))
 
@@ -237,15 +234,7 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
                 player_positions.pop(room_id, None)
                 player_ready.pop(room_id, None)
                 leaderboards.pop(room_id, None)
-                # active_objects.pop(room_id, None)
                 room_last_leaderboard_update.pop(room_id, None)
-
-                ws2 = getattr(app.state, "generator_ws", None)
-                try:
-                    await ws2.send_text(json.dumps({"type": "room_closed", "room_id": room_id}))
-                except Exception as e:
-                    print(style_text(f"Error:", "bold", "#FF0000"))
-                    print(style_text(f"Failed to send room close message to object generator microservice: {e}", "normal", "#FF5858"))
 
         if room_id in player_positions:
             await manager.broadcast_message(room_id, json.dumps({"type": "state_update", "players": player_positions[room_id]}))
@@ -276,25 +265,31 @@ async def leaderboard_endpoint(websocket: WebSocket):
         print(style_text("Leaderboard microservice disconnected!", "bold", "#FFFF9C"))
         app.state.leaderboard_ws = None
 
-# @app.websocket("/ws/object_generator")
-# async def generator_endpoint(websocket: WebSocket):
-#     await websocket.accept()
-#     print(style_text("Object generator microservice connected!", "bold", "#A4FF9C"))
-#     app.state.generator_ws = websocket
+@app.websocket("/ws/object_generator")
+async def generator_endpoint(websocket: WebSocket):
+    await websocket.accept()
+    print(style_text("Object generator microservice connected!", "bold", "#A4FF9C"))
+    app.state.generator_ws = websocket
     
-#     await websocket.send_text(json.dumps({"type": "generation_coordinates", "Y_SLOTS": Y_SLOTS, "FINISH_LINE": FINISH_LINE}))
+    await websocket.send_text(json.dumps({"type": "generation_coordinates", "Y_SLOTS": Y_SLOTS, "FINISH_LINE": FINISH_LINE}))
 
-#     try:
-#         while True:
-#             data = await websocket.receive_text()
-#             objects = json.loads(data)
-#             room_id = objects.get("room_id")
-#             active_objects[room_id] = objects["active_objects"]
-#             print(style_text("Object Generator:", "bold", "#A4FF9C"))
-#             print(style_text(json.dumps(objects, indent=4), "normal", "#DAFFD7"))
-#     except WebSocketDisconnect:
-#         print(style_text("Object generator microservice disconnected!", "bold", "#A4FF9C"))
-#         app.state.generator_ws = None
+    try:
+        while True:
+            data = await websocket.receive_text()
+            msg = json.loads(data)
+            room_id = msg.get("room_id")
+            new_obj = msg.get("object")
+
+            if room_id not in room_objects:
+                room_objects[room_id] = []
+            room_objects[room_id].append(new_obj)
+    
+            print(style_text("Object Generator:", "bold", "#A4FF9C"))
+            print(style_text(json.dumps(msg, indent=4), "normal", "#DAFFD7"))
+            
+    except WebSocketDisconnect:
+        print(style_text("Object generator microservice disconnected!", "bold", "#A4FF9C"))
+        app.state.generator_ws = None
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
