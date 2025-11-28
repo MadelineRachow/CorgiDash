@@ -25,13 +25,15 @@ player_ready = {}
 player_positions = {}
 leaderboards = {}
 room_last_leaderboard_update: dict[str, float] = {}
+active_objects = []
 
 async def update_player_position(room_id, email, x, y, username):
     # Update player positions and leaderboard
     player_positions.setdefault(room_id, {})[email] = {"x": x, "y": y, "username": username}
 
     ws1 = getattr(app.state, "leaderboard_ws", None)
-    if ws1 is None or room_id not in player_positions:
+    ws2 = getattr(app.state, "generator_ws", None)
+    if ws1 is None or ws2 is None or room_id not in player_positions:
         return
     
     current_time = time.time()
@@ -48,6 +50,7 @@ async def update_player_position(room_id, email, x, y, username):
 
     try:
         await ws1.send_text(json.dumps(payload))
+        await ws2.send_text(json.dumps(payload))
     except Exception as e:
         print(style_text(f"Error sending to microservices: {e}", "bold", "#FF0000"))
     
@@ -247,7 +250,6 @@ async def leaderboard_endpoint(websocket: WebSocket):
             leaderboards[room_id] = leaderboard["players"]
             print(style_text("Leaderboard:", "bold", "#FFFF9C"))
             print(style_text(json.dumps(leaderboard, indent=4), "normal", "#FFFFD7"))
-            print(f"Leaderboards dict: {leaderboards}")
 
     except WebSocketDisconnect:
         print(style_text("Leaderboard microservice disconnected!", "bold", "#FFFF9C"))
@@ -265,7 +267,9 @@ async def generator_endpoint(websocket: WebSocket):
         while True:
             data = await websocket.receive_text()
             objects = json.loads(data)
-            print(objects)
+            active_objects = objects
+            print(style_text("Leaderboard:", "bold", "#A4FF9C"))
+            print(style_text(json.dumps(objects, indent=4), "normal", "#DAFFD7"))
     except WebSocketDisconnect:
         print(style_text("Object generator microservice disconnected!", "bold", "#A4FF9C"))
         app.state.generator_ws = None
