@@ -15,8 +15,11 @@ function GameCanvas({ws, userEmail, userX, userY, setX, setY, players, raceStart
     const DEFAULT_MOVE_X = 0.0025;
     const BOOST_MOVE_X = 0.004;
     const OBSTACLE_MOVE_X = 0.001;
-    const MOVE_PERCENT_Y = 0.01;
+    const DEFAULT_MOVE_Y = 0.01;
+    const BOOST_MOVE_Y = 0.012;
+    const OBSTACLE_MOVE_Y = 0.008;
     const moveXRef = useRef(DEFAULT_MOVE_X);
+    const moveYRef = useRef(DEFAULT_MOVE_Y);
     const activeSpeedRef = useRef(null);
 
     // Sprite dictionary
@@ -138,9 +141,10 @@ function GameCanvas({ws, userEmail, userX, userY, setX, setY, players, raceStart
                 }
             }); 
 
-            function applySpeedOverTime(targetSpeed, duration = 2000, spriteType, type) {
+            function applySpeedOverTime(targetSpeedX, targetSpeedY, duration = 2000, spriteType, type) {
                 const startTime = performance.now();
-                const startSpeed = DEFAULT_MOVE_X;
+                const startSpeedX = DEFAULT_MOVE_X;
+                const startSpeedY = DEFAULT_MOVE_Y;
 
                 setSpriteType(spriteType);
                 activeSpeedRef.current = type;
@@ -159,12 +163,14 @@ function GameCanvas({ws, userEmail, userX, userY, setX, setY, players, raceStart
                         factor = 1;
                     };
 
-                    moveXRef.current = startSpeed + factor * (targetSpeed - startSpeed);
+                    moveXRef.current = startSpeedX + factor * (targetSpeedX - startSpeedX);
+                    moveYRef.current = startSpeedY + factor * (targetSpeedY - startSpeedY);
 
                     if (t < 1) {
                         requestAnimationFrame(updateSpeed);
                     } else {
                         moveXRef.current = DEFAULT_MOVE_X;
+                        moveYRef.current = DEFAULT_MOVE_Y;
                         setSpriteType("walk");
                         activeSpeedRef.current = null;
                     };
@@ -201,9 +207,9 @@ function GameCanvas({ws, userEmail, userX, userY, setX, setY, players, raceStart
                         }));
                     };
                     if (obj.type === "boost") {
-                        applySpeedOverTime(BOOST_MOVE_X, 2000, "run", "boost");
+                        applySpeedOverTime(BOOST_MOVE_X, BOOST_MOVE_Y, 2000, "run", "boost");
                     } else if (obj.type === "obstacle") {
-                        applySpeedOverTime(OBSTACLE_MOVE_X, 2000, "sniff", "obstacle");
+                        applySpeedOverTime(OBSTACLE_MOVE_X, OBSTACLE_MOVE_Y, 2000, "sniff", "obstacle");
                     };
                     // console.log(`Hit object at y=${obj.y}, x=${obj.x}, id=${obj.id}`);
                 };
@@ -246,8 +252,8 @@ function GameCanvas({ws, userEmail, userX, userY, setX, setY, players, raceStart
 
             setY(prevY => {
                 let newY = prevY;
-                if (e.key === "ArrowUp" || e.key === "w") newY = Math.max(0.75, prevY - MOVE_PERCENT_Y);
-                if (e.key === "ArrowDown" || e.key === "s") newY = Math.min(0.89, prevY + MOVE_PERCENT_Y);
+                if (e.key === "ArrowUp" || e.key === "w") newY = Math.max(0.75, prevY - moveYRef.current);
+                if (e.key === "ArrowDown" || e.key === "s") newY = Math.min(0.89, prevY + moveYRef.current);
                 return newY;
             });
             sendMove();
