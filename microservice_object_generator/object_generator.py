@@ -9,10 +9,10 @@ from style_console_text import style_text
 
 Y_SLOTS = []
 FINISH_LINE = 0
-MIN_SPACING = 0.01
-MAX_SPACING = 0.05
-PLAYER_BUFFER = 0.01
-LOOKAHEAD = 2
+MIN_SPACING = 0.05
+MAX_SPACING = 0.15
+PLAYER_BUFFER = 0.05
+LOOKAHEAD = 5
 
 async def main():
     global Y_SLOTS
@@ -32,8 +32,8 @@ async def main():
                 FINISH_LINE = server_msg["FINISH_LINE"]
             elif server_msg["type"] == "room_deleted":
                 room_id = server_msg["room_id"]
-                if room_id in objects_per_room:
-                    del objects_per_room[room_id]
+                objects_per_room.pop(room_id, None)
+
             elif server_msg["type"] == "update_positions":
                 player_positions = server_msg["players"]
                 room_id = server_msg["room_id"]

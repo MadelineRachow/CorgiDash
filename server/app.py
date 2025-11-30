@@ -17,8 +17,7 @@ SUPABASE_URL = os.getenv("SUPABASE_URL", "YOUR_SUPABASE_URL_HERE")
 SUPABASE_AUDIENCE = "authenticated"
 ROOM_CAPACITY = 3 
 Y_SLOTS = [0.75, 0.81, 0.89]
-FINISH_LINE = 75
-# FINISH_LINES = {"short": 50, "medium": 250, "long": 500}
+FINISH_LINE = 2
 LEADERBOARD_UPDATE_INTERVAL = 0.1
 
 app = FastAPI()
@@ -241,6 +240,9 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
                     
                     if finished_players:
                         await manager.broadcast_message(room_id, json.dumps({"type": "finished", "players": finished_players}))
+                        ws3 = getattr(app.state, "counter_ws", None)
+                        if ws3:
+                            await ws3.send_text(json.dumps({"type": "game_over", "room_id": room_id}))
 
             except json.JSONDecodeError:
                 print(style_text("Received invalid JSON", "bold", "#FF0000"))
@@ -277,6 +279,9 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
                 ws2 = getattr(app.state, "generator_ws", None)
                 if ws2:
                     await ws2.send_text(json.dumps({"type": "room_deleted", "room_id": room_id}))
+                ws3 = getattr(app.state, "counter_ws", None)
+                if ws3:
+                    await ws3.send_text(json.dumps({"type": "room_deleted", "room_id": room_id}))
 
         if room_id in player_positions:
             await manager.broadcast_message(room_id, json.dumps({"type": "state_update", "players": player_positions[room_id]}))
@@ -300,8 +305,8 @@ async def leaderboard_endpoint(websocket: WebSocket):
             leaderboard = json.loads(data)
             room_id = leaderboard.get("room_id")
             leaderboards[room_id] = leaderboard["players"]
-            print(style_text("Leaderboard:", "bold", "#FFFF9C"))
-            print(style_text(json.dumps(leaderboard, indent=4), "normal", "#FFFFD7"))
+            # print(style_text("Leaderboard:", "bold", "#FFFF9C"))
+            # print(style_text(json.dumps(leaderboard, indent=4), "normal", "#FFFFD7"))
 
     except WebSocketDisconnect:
         print(style_text("Leaderboard microservice disconnected!", "bold", "#FFFF9C"))
@@ -329,8 +334,8 @@ async def generator_endpoint(websocket: WebSocket):
 
             await manager.broadcast_message(room_id, json.dumps({"type": "objects", "objects": room_objects[room_id]}))
     
-            print(style_text("Object Generator:", "bold", "#A4FF9C"))
-            print(style_text(json.dumps(msg, indent=4), "normal", "#DAFFD7"))
+            # print(style_text("Object Generator:", "bold", "#A4FF9C"))
+            # print(style_text(json.dumps(msg, indent=4), "normal", "#DAFFD7"))
 
     except WebSocketDisconnect:
         print(style_text("Object generator microservice disconnected!", "bold", "#A4FF9C"))
@@ -346,6 +351,9 @@ async def counter_endpoint(websocket: WebSocket):
         while True:
             data = await websocket.receive_text()
             msg = json.loads(data)
+
+            print(style_text("Object Counter:", "bold", "#9CF0FF"))
+            print(style_text(json.dumps(msg, indent=4), "normal", "#D7F4FF"))
 
     except WebSocketDisconnect:
         print(style_text("Object counter microservice disconnected!", "bold", "#9CF0FF"))
