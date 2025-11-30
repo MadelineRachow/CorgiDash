@@ -1,6 +1,7 @@
 import {useEffect, useState, useRef} from 'react';
 import {useNavigate} from 'react-router-dom';
 import CorgiSprite from "./CorgiSprite";
+import './App.css';
 
 function CustomizePage({supabase}) {
     const navigate = useNavigate();
@@ -9,6 +10,7 @@ function CustomizePage({supabase}) {
     // const WEBSOCKET_URL = "wss://adroit-conqueringly-ella.ngrok-free.dev/ws/connect";
     const [open, setOpen] = useState(false);
     const [corgiType, setCorgiType] = useState("");
+    const [currentSkin, setCurrentSkin] = useState("");
 
     useEffect(() => {
         // Flag to prevent state updates after component unmount
@@ -21,6 +23,9 @@ function CustomizePage({supabase}) {
                 console.log("No session found.");
                 return;
             };
+
+            const {data} = await supabase.auth.getUser();
+            if (data?.user) setCurrentSkin(data.user.user_metadata?.corgiSkin || "");
 
             // Extract the JWT token for authentication the WebSocket connection
             const authToken = session.access_token;
@@ -39,6 +44,7 @@ function CustomizePage({supabase}) {
                 const message = JSON.parse(event.data);
                 if (message.type === "corgi_updated") {
                     console.log(`Corgi updated to ${message.corgi_skin}`)
+                    setCurrentSkin(message.corgi_skin);
                 };
             };
 
@@ -108,10 +114,18 @@ function CustomizePage({supabase}) {
         <div>
             <button onClick={returnToLobby}>Back to lobby</button>
             <h3>Customize your corgi</h3>
-            <button onClick={() => chooseCorgi("tri_no_tail")}><CorgiSprite image_url={"corgi_idle/corgi_tri_no_tail_idle_1.png"}/></button>
-            <button onClick={() => chooseCorgi("tri")}><CorgiSprite image_url={"corgi_idle/corgi_tri_idle_1.png"}/></button>
-            <button onClick={() => chooseCorgi("tan_no_tail")}><CorgiSprite image_url={"corgi_idle/corgi_tan_no_tail_idle_1.png"}/></button>
-            <button onClick={() => chooseCorgi("tan")}><CorgiSprite image_url={"corgi_idle/corgi_tan_idle_1.png"}/></button>
+            <button className={currentSkin === "tri_no_tail" ? "corgi-btn selected" : "corgi-btn"} onClick={() => chooseCorgi("tri_no_tail")}>
+                <CorgiSprite image_url={"corgi_idle/corgi_tri_no_tail_idle_1.png"}/>
+            </button>
+            <button className={currentSkin === "tri" ? "corgi-btn selected" : "corgi-btn"} onClick={() => chooseCorgi("tri")}>
+                <CorgiSprite image_url={"corgi_idle/corgi_tri_idle_1.png"}/>
+            </button>
+            <button className={currentSkin === "tan_no_tail" ? "corgi-btn selected" : "corgi-btn"} onClick={() => chooseCorgi("tan_no_tail")}>
+                <CorgiSprite image_url={"corgi_idle/corgi_tan_no_tail_idle_1.png"}/>
+            </button>
+            <button className={currentSkin === "tan" ? "corgi-btn selected" : "corgi-btn"} onClick={() => chooseCorgi("tan")}>
+                <CorgiSprite image_url={"corgi_idle/corgi_tan_idle_1.png"}/>
+            </button>
             <ConfirmationPopup corgiType={corgiType}/>
         </div>
     )

@@ -16,6 +16,10 @@ p, li, button, input {
   font-size: 18px;
 }
 
+.corgi-btn.selected {
+    border: 2px solid red;
+}
+
 /* .gameBackground {
   background-image: url('D:/CS PROJECTS/CorgiDash/client/src/assets/game_background.jpg');
   background-repeat: no-repeat;
