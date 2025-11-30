@@ -1,6 +1,6 @@
 import {useEffect, useRef, useMemo, useState} from 'react';
 
-function GameCanvas({ws, userEmail, userX, userY, setX, setY, players, raceStarted, raceFinished, objects, corgiSkin}) {
+function GameCanvas({ws, userEmail, userX, userY, setX, setY, players, raceStarted, raceFinished, objects, corgiSkin, finishLine=2}) {
     const canvasRef = useRef(null);
     const backgroundRef = useRef(new Image());
     const spriteRef = useRef(new Image());
@@ -27,6 +27,7 @@ function GameCanvas({ws, userEmail, userX, userY, setX, setY, players, raceStart
         walk: {src: `/assets/corgi_walk/corgi_${corgiSkin}_walk.png`, frames: 5},
         run: {src: `/assets/corgi_run/corgi_${corgiSkin}_run.png`, frames: 8},
         sniff: {src: `/assets/corgi_sniff/corgi_${corgiSkin}_sniff_walk.png`, frames: 8},
+        sit: {src: `/assets/corgi_sit/corgi_${corgiSkin}_sit.png`, frames: 9},
     }), [corgiSkin]);
 
     const spriteImages = useMemo(() => {
@@ -48,7 +49,15 @@ function GameCanvas({ws, userEmail, userX, userY, setX, setY, players, raceStart
     useEffect(() => {
         spriteRef.current.src = spriteImages[spriteType].src;
         frameRef.current = 0; // Reset animation to first frame
-    }, [spriteType, spriteImages]);    
+    }, [spriteType, spriteImages]); 
+
+    useEffect(() => {
+        if (raceFinished) {
+            setSpriteType("sit");
+        } else if (!raceFinished && spriteType === "sit") {
+            setSpriteType("walk"); 
+        };
+    }, [raceFinished, spriteType]);
 
     useEffect(() => {
         const canvas = canvasRef.current;
@@ -83,6 +92,18 @@ function GameCanvas({ws, userEmail, userX, userY, setX, setY, players, raceStart
             drawSegment(xOffset, background.width - xOffset, 0);
             drawSegment(0, xOffset, background.width - xOffset);
 
+            // Draw finish line
+            const finishX = (finishLine - userX - 0.005) * background.width + ANCHOR_X * WORLD_WIDTH;
+            const finishYStart = 0.70 * WORLD_HEIGHT;
+            const finishYEnd = 1.00 * WORLD_HEIGHT;
+
+            context.strokeStyle = "black";
+            context.lineWidth = 5;
+            context.beginPath();
+            context.moveTo(finishX, finishYStart);
+            context.lineTo(finishX, finishYEnd);
+            context.stroke();
+
             // Handle animation frames on timed interval (FRAME_DURATION)
             if (!lastFrameUpdateRef.current) {
                 lastFrameUpdateRef.current = timestamp;
@@ -90,7 +111,15 @@ function GameCanvas({ws, userEmail, userX, userY, setX, setY, players, raceStart
 
             const elapsed = timestamp - lastFrameUpdateRef.current;
             if (elapsed > FRAME_DURATION) {
-                frameRef.current = (frameRef.current + 1) % sprites[spriteType].frames;
+                if (spriteType === "sit") {
+                    if (frameRef.current < 2) {
+                        frameRef.current += 1; // Play first 3 frames
+                    } else {
+                        frameRef.current = 3 + ((frameRef.current - 3 + 1) % 6); // Loop last 5 frames
+                    };
+                } else {
+                    frameRef.current = (frameRef.current + 1) % sprites[spriteType].frames;
+                }
                 lastFrameUpdateRef.current = timestamp;
             };
 
@@ -221,7 +250,7 @@ function GameCanvas({ws, userEmail, userX, userY, setX, setY, players, raceStart
         // Start the animation loop
         animationID = requestAnimationFrame(draw);
         return () => cancelAnimationFrame(animationID);
-    }, [ws, players, userX, userY, userEmail, spriteType, sprites, raceStarted, raceFinished, objects]);
+    }, [ws, players, userX, userY, userEmail, spriteType, sprites, raceStarted, raceFinished, objects, finishLine]);
 
     useEffect(() => {xRef.current = userX;}, [userX]);
     useEffect(() => {yRef.current = userY;}, [userY]);

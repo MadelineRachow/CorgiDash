@@ -9,9 +9,9 @@ from style_console_text import style_text
 
 Y_SLOTS = []
 FINISH_LINE = 0
-MIN_SPACING = 0.05
-MAX_SPACING = 0.15
-PLAYER_BUFFER = 0.05
+MIN_SPACING = 0.1
+MAX_SPACING = 0.2
+PLAYER_BUFFER = 0.1
 LOOKAHEAD = 5
 
 async def main():
@@ -49,7 +49,7 @@ async def main():
 
                 # Pre-generate objects up to LOOKAHEAD
                 next_x = max_generated_x + random.uniform(MIN_SPACING, MAX_SPACING)
-                while next_x < target_x and next_x < FINISH_LINE:
+                while next_x < target_x and next_x < FINISH_LINE - 0.1:
                     y = random.choice(Y_SLOTS)
                     # Avoid spawning on top of players
                     if all(abs(next_x - px) > PLAYER_BUFFER for px, _ in players):
