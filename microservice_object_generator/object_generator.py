@@ -12,7 +12,7 @@ FINISH_LINE = 0
 MIN_SPACING = 0.1
 MAX_SPACING = 0.5
 PLAYER_BUFFER = 0.5
-LOOKAHEAD = 25
+LOOKAHEAD = 5
 
 async def main():
     global Y_SLOTS

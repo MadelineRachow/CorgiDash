@@ -12,12 +12,11 @@ function GameCanvas({ws, userEmail, userX, userY, setX, setY, players, raceStart
 
     const ANCHOR_X = 0.25;
     const FRAME_DURATION = 150;
-    const DEFAULT_MOVE_X = 0.04;
-    const BOOST_MOVE_X = 0.05;
-    const OBSTACLE_MOVE_X = 0.03;
+    const DEFAULT_MOVE_X = 0.004;
+    const BOOST_MOVE_X = 0.006;
+    const OBSTACLE_MOVE_X = 0.0005;
     const MOVE_PERCENT_Y = 0.01;
     const moveXRef = useRef(DEFAULT_MOVE_X);
-    const SPEED_FACTOR = 0.1;
 
     // Sprite dictionary
     const sprites = useMemo(() => ({
@@ -150,7 +149,7 @@ function GameCanvas({ws, userEmail, userX, userY, setX, setY, players, raceStart
 
                     // Triangle wave: ramp up then down
                     const factor = 1 - 2 * Math.abs(t - 0.5);
-                    moveXRef.current = (startSpeed + factor * (targetSpeed - startSpeed)) * SPEED_FACTOR;
+                    moveXRef.current = (startSpeed + factor * (targetSpeed - startSpeed));
 
                     if (t < 1) {
                         requestAnimationFrame(updateSpeed);
@@ -180,6 +179,7 @@ function GameCanvas({ws, userEmail, userX, userY, setX, setY, players, raceStart
                         ws.current.send(JSON.stringify({
                             type: "object_hit",
                             object_id: obj.id,
+                            object_type: obj.type,
                             email: userEmail
                         }));
                     };
@@ -219,7 +219,7 @@ function GameCanvas({ws, userEmail, userX, userY, setX, setY, players, raceStart
         // Horizontal movement (May want to later handle movement calculations on backend for security)
         const interval = setInterval(() => {
             if (!raceStarted || raceFinished) return;
-            setX(prevX => prevX + moveXRef.current * SPEED_FACTOR);
+            setX(prevX => prevX + moveXRef.current);
             sendMove();
         }, 16);
 

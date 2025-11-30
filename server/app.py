@@ -17,7 +17,7 @@ SUPABASE_URL = os.getenv("SUPABASE_URL", "YOUR_SUPABASE_URL_HERE")
 SUPABASE_AUDIENCE = "authenticated"
 ROOM_CAPACITY = 3 
 Y_SLOTS = [0.75, 0.81, 0.89]
-FINISH_LINE = 250
+FINISH_LINE = 75
 # FINISH_LINES = {"short": 50, "medium": 250, "long": 500}
 LEADERBOARD_UPDATE_INTERVAL = 0.1
 
@@ -66,7 +66,7 @@ async def update_player_position(room_id, email, x, y, username):
         print(style_text(f"Error:", "bold", "#FF0000"))
         print(style_text(f"Failed to send payload to object generator microservice: {e}", "normal", "#FF5858"))
 
-async def handle_object_hit(room_id, object_id, hit_by_email):
+async def handle_object_hit(room_id, object_id, object_type, hit_by_email):
     if room_id not in room_objects:
         return
     
@@ -79,6 +79,10 @@ async def handle_object_hit(room_id, object_id, hit_by_email):
             return False
         objects.pop(idx)
         room_objects[room_id] = objects
+
+    ws3 = getattr(app.state, "counter_ws", None)
+    if ws3:
+        await ws3.send_text(json.dumps({"type": "object_hit", "room_id": room_id, "object_type": object_type, "email": hit_by_email}))
 
     await manager.broadcast_message(room_id, json.dumps({"type": "objects", "objects": room_objects[room_id]}))
     print(style_text(f"Object {object_id} removed by {hit_by_email} in {room_id}", "normal", "#A4FF9C"))
@@ -209,9 +213,10 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
 
                 if message.get("type") == "object_hit":
                     object_id = message.get("object_id")
+                    object_type = message.get("object_type")
                     if object_id and user_email:
                         try:
-                            await handle_object_hit(room_id, object_id, user_email)
+                            await handle_object_hit(room_id, object_id, object_type, user_email)
                         except Exception as e:
                             print(style_text(f"Error handling object hit: {e}", "bold", "#FF0000"))
 
@@ -330,6 +335,21 @@ async def generator_endpoint(websocket: WebSocket):
     except WebSocketDisconnect:
         print(style_text("Object generator microservice disconnected!", "bold", "#A4FF9C"))
         app.state.generator_ws = None
+
+@app.websocket("/ws/object_counter")
+async def counter_endpoint(websocket: WebSocket):
+    await websocket.accept()
+    print(style_text("Object counter microservice connected!", "bold", "#9CF0FF"))
+    app.state.counter_ws = websocket
+
+    try:
+        while True:
+            data = await websocket.receive_text()
+            msg = json.loads(data)
+
+    except WebSocketDisconnect:
+        print(style_text("Object counter microservice disconnected!", "bold", "#9CF0FF"))
+        app.state.counter_ws = None
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
