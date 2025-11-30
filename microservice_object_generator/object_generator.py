@@ -9,10 +9,10 @@ from style_console_text import style_text
 
 Y_SLOTS = []
 FINISH_LINE = 0
-MIN_SPACING = 0.1
-MAX_SPACING = 0.5
-PLAYER_BUFFER = 0.5
-LOOKAHEAD = 5
+MIN_SPACING = 0.01
+MAX_SPACING = 0.05
+PLAYER_BUFFER = 0.01
+LOOKAHEAD = 2
 
 async def main():
     global Y_SLOTS
@@ -56,7 +56,7 @@ async def main():
                         # Bias type
                         obj_type = random.choices(
                             ["boost", "obstacle"],
-                            weights=[0.6, 0.4] if next_x < trailing_player[0] + 10 else [0.5, 0.5]
+                            weights=[0.3, 0.7] if next_x < trailing_player[0] + 10 else [0.3, 0.7]
                         )[0]
                         new_obj = {"type": obj_type, "x": next_x, "y": y}
                         room_objects.append(new_obj)

@@ -12,11 +12,12 @@ function GameCanvas({ws, userEmail, userX, userY, setX, setY, players, raceStart
 
     const ANCHOR_X = 0.25;
     const FRAME_DURATION = 150;
-    const DEFAULT_MOVE_X = 0.003;
-    const BOOST_MOVE_X = 0.0045;
-    const OBSTACLE_MOVE_X = 0.0005;
+    const DEFAULT_MOVE_X = 0.0025;
+    const BOOST_MOVE_X = 0.004;
+    const OBSTACLE_MOVE_X = 0.001;
     const MOVE_PERCENT_Y = 0.01;
     const moveXRef = useRef(DEFAULT_MOVE_X);
+    const activeSpeedRef = useRef(null);
 
     // Sprite dictionary
     const sprites = useMemo(() => ({
@@ -137,40 +138,35 @@ function GameCanvas({ws, userEmail, userX, userY, setX, setY, players, raceStart
                 }
             }); 
 
-            function applySpeedOverTime(targetSpeed, duration, spriteType, fastRamp=false) {
+            function applySpeedOverTime(targetSpeed, duration = 2000, spriteType, type) {
                 const startTime = performance.now();
                 const startSpeed = DEFAULT_MOVE_X;
 
                 setSpriteType(spriteType);
+                activeSpeedRef.current = type;
 
                 function updateSpeed(currentTime) {
                     const elapsed = currentTime - startTime;
                     const t = Math.min(elapsed / duration, 1); // 0 → 1
 
-                    // Triangle wave: ramp up then down
                     let factor;
-                    if (fastRamp && targetSpeed < startSpeed) {
-                        const rampDownDuration = 0.01;
-                        const holdDuration = 0.3;
-                        const rampUpDuration = 1 - rampDownDuration - holdDuration;
-                        if (t < rampDownDuration) {
-                            factor = - (t / rampDownDuration); 
-                        } else if (t < rampDownDuration + holdDuration) {
-                            factor = -1;
-                        } else {
-                            const tUp = (t - rampDownDuration - holdDuration) / rampUpDuration;
-                            factor = -1 + tUp;
-                        };
+
+                    if (t < 0.125) {
+                        factor = t / 0.125; 
+                    } else if (t > 0.875) {
+                        factor = (1 - t) / 0.125; 
                     } else {
-                        factor = 1 - 2 * Math.abs(t - 0.5);
+                        factor = 1;
                     };
-                    moveXRef.current = (startSpeed + factor * (targetSpeed - startSpeed));
+
+                    moveXRef.current = startSpeed + factor * (targetSpeed - startSpeed);
 
                     if (t < 1) {
                         requestAnimationFrame(updateSpeed);
                     } else {
                         moveXRef.current = DEFAULT_MOVE_X;
                         setSpriteType("walk");
+                        activeSpeedRef.current = null;
                     };
                 };
 
@@ -190,6 +186,12 @@ function GameCanvas({ws, userEmail, userX, userY, setX, setY, players, raceStart
                 const objRight = obj.x + 0.05; 
 
                 if (hit && userX >= objLeft && userX <= objRight) {
+                    const canCollect =
+                        (obj.type === "boost" && activeSpeedRef.current !== "boost") ||
+                        (obj.type === "obstacle" && activeSpeedRef.current !== "obstacle");
+
+                    if (!canCollect) return;
+
                     if (ws.current?.readyState === WebSocket.OPEN) {
                         ws.current.send(JSON.stringify({
                             type: "object_hit",
@@ -199,9 +201,9 @@ function GameCanvas({ws, userEmail, userX, userY, setX, setY, players, raceStart
                         }));
                     };
                     if (obj.type === "boost") {
-                        applySpeedOverTime(BOOST_MOVE_X, 2000, "run");
+                        applySpeedOverTime(BOOST_MOVE_X, 2000, "run", "boost");
                     } else if (obj.type === "obstacle") {
-                        applySpeedOverTime(OBSTACLE_MOVE_X, 2000, "sniff");
+                        applySpeedOverTime(OBSTACLE_MOVE_X, 2000, "sniff", "obstacle");
                     };
                     console.log(`Hit object at y=${obj.y}, x=${obj.x}, id=${obj.id}`);
                 };
