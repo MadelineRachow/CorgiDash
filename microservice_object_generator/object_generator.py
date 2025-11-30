@@ -9,9 +9,9 @@ from style_console_text import style_text
 
 Y_SLOTS = []
 FINISH_LINE = 0
-MIN_SPACING = 5
-MAX_SPACING = 10
-PLAYER_BUFFER = 2.5
+MIN_SPACING = 0.1
+MAX_SPACING = 0.5
+PLAYER_BUFFER = 0.5
 LOOKAHEAD = 25
 
 async def main():
