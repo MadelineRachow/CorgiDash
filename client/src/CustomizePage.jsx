@@ -1,11 +1,71 @@
-import {useState} from 'react';
+import {useEffect, useState, useRef} from 'react';
 import {useNavigate} from 'react-router-dom';
 import CorgiSprite from "./CorgiSprite";
 
-function CustomizePage() {
+function CustomizePage({supabase}) {
     const navigate = useNavigate();
+    const ws = useRef(null);
+    const WEBSOCKET_URL = "ws://localhost:8001/ws/connect";
+    // const WEBSOCKET_URL = "wss://adroit-conqueringly-ella.ngrok-free.dev/ws/connect";
     const [open, setOpen] = useState(false);
     const [corgiType, setCorgiType] = useState("");
+
+    useEffect(() => {
+        // Flag to prevent state updates after component unmount
+        let isMounted = true;
+        
+        // Get current user session (to get auth token)
+        const connectWebSocket = async() => {
+            const {data: {session}} = await supabase.auth.getSession();
+            if (!session) { // If no session found, update status and exit
+                console.log("No session found.");
+                return;
+            };
+
+            // Extract the JWT token for authentication the WebSocket connection
+            const authToken = session.access_token;
+            const socketUrl = `${WEBSOCKET_URL}?token=${authToken}`;
+            ws.current = new WebSocket(socketUrl);
+
+            // WebSocket open event handler
+            ws.current.onopen = () => {
+                if (!isMounted) return;
+                console.log("Connected!");
+            };
+
+            // Websocket message event handler 
+            ws.current.onmessage = (event) => {
+                if (!isMounted) return;
+                const message = JSON.parse(event.data);
+                if (message.type === "corgi_updated") {
+                    console.log(`Corgi updated to ${message.corgi_skin}`)
+                };
+            };
+
+            // Websocket close event handler
+            ws.current.onclose = (event) => {
+                if (!isMounted) return;
+                console.log(`Disconnected. Code ${event.code}`);
+            };
+
+            // Websocket error event handler
+            ws.current.onerror = (error) => {
+                if (!isMounted) return;
+                console.log(`Connection error! Check microservice status. Error: ${error}`)
+            };
+        };
+
+        // Initiate Websocket connection
+        connectWebSocket();
+
+    // Cleanup function on unmount
+        return () => {
+            isMounted = false;
+            if (ws.current && ws.current.readyState === WebSocket.OPEN) {
+                ws.current.close();
+            };
+        };
+    }, [supabase]);
 
     function returnToLobby() {
         navigate("/lobby");
@@ -13,7 +73,10 @@ function CustomizePage() {
 
     function setNewCorgi(corgiType) {
         console.log(corgiType);
-        // Logic to supabase to be implemented later
+        if (ws.current && ws.current.readyState === WebSocket.OPEN) {
+            ws.current.send(JSON.stringify({type: "customize_corgi", corgi_skin: corgiType}));
+        };
+        setCorgiType("");
     };
 
     function chooseCorgi(corgiType) {

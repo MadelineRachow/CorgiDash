@@ -55,7 +55,7 @@ function App() {
                 <Route path="/forgotpassword" element={user ? <Navigate to="/lobby" replace/> : <ForgotPasswordPage supabase={supabase}/>}/>
                 <Route path="/resetpassword" element={<ResetPasswordPage supabase={supabase} />} />
                 <Route path="/lobby" element={<ProtectedRoute user={user}><LobbyPage supabase={supabase}/></ProtectedRoute>}/>
-                <Route path="/customizecorgi" element={<ProtectedRoute user={user}><CustomizePage/></ProtectedRoute>}/>
+                <Route path="/customizecorgi" element={<ProtectedRoute user={user}><CustomizePage supabase={supabase}/></ProtectedRoute>}/>
                 <Route path="/game" element={<ProtectedRoute user={user}><GamePage supabase={supabase}/></ProtectedRoute>}/>
                 <Route path="/help" element={<ProtectedRoute user={user}><HelpPage/></ProtectedRoute>}/>
                 <Route path="*" element={<Navigate to={user ? "/lobby" : "/login"} replace/>}/>
