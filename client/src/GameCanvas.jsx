@@ -12,8 +12,8 @@ function GameCanvas({ws, userEmail, userX, userY, setX, setY, players, raceStart
 
     const ANCHOR_X = 0.25;
     const FRAME_DURATION = 150;
-    const DEFAULT_MOVE_X = 0.004;
-    const BOOST_MOVE_X = 0.006;
+    const DEFAULT_MOVE_X = 0.003;
+    const BOOST_MOVE_X = 0.0045;
     const OBSTACLE_MOVE_X = 0.0005;
     const MOVE_PERCENT_Y = 0.01;
     const moveXRef = useRef(DEFAULT_MOVE_X);
@@ -137,7 +137,7 @@ function GameCanvas({ws, userEmail, userX, userY, setX, setY, players, raceStart
                 }
             }); 
 
-            function applySpeedOverTime(targetSpeed, duration, spriteType) {
+            function applySpeedOverTime(targetSpeed, duration, spriteType, fastRamp=false) {
                 const startTime = performance.now();
                 const startSpeed = DEFAULT_MOVE_X;
 
@@ -148,7 +148,22 @@ function GameCanvas({ws, userEmail, userX, userY, setX, setY, players, raceStart
                     const t = Math.min(elapsed / duration, 1); // 0 → 1
 
                     // Triangle wave: ramp up then down
-                    const factor = 1 - 2 * Math.abs(t - 0.5);
+                    let factor;
+                    if (fastRamp && targetSpeed < startSpeed) {
+                        const rampDownDuration = 0.01;
+                        const holdDuration = 0.3;
+                        const rampUpDuration = 1 - rampDownDuration - holdDuration;
+                        if (t < rampDownDuration) {
+                            factor = - (t / rampDownDuration); 
+                        } else if (t < rampDownDuration + holdDuration) {
+                            factor = -1;
+                        } else {
+                            const tUp = (t - rampDownDuration - holdDuration) / rampUpDuration;
+                            factor = -1 + tUp;
+                        };
+                    } else {
+                        factor = 1 - 2 * Math.abs(t - 0.5);
+                    };
                     moveXRef.current = (startSpeed + factor * (targetSpeed - startSpeed));
 
                     if (t < 1) {
@@ -156,11 +171,11 @@ function GameCanvas({ws, userEmail, userX, userY, setX, setY, players, raceStart
                     } else {
                         moveXRef.current = DEFAULT_MOVE_X;
                         setSpriteType("walk");
-                    }
-                }
+                    };
+                };
 
                 requestAnimationFrame(updateSpeed);
-            }
+            };
 
             // Handle collision with speed boosts and obstacles
             objects.forEach(obj => {
