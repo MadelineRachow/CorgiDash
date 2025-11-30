@@ -131,9 +131,17 @@ function GameCanvas({ws, userEmail, userX, userY, setX, setY, players, raceStart
                 // Small margin for x collision
                 const objLeft = obj.x;
                 const objRight = obj.x + 0.05; 
+
                 if (hit && userX >= objLeft && userX <= objRight) {
-                    console.log(`Hit object at y=${obj.y}, x=${obj.x}`);
-                }
+                    if (ws.current?.readyState === WebSocket.OPEN) {
+                        ws.current.send(JSON.stringify({
+                            type: "object_hit",
+                            object_id: obj.id,
+                            email: userEmail
+                        }));
+                    };
+                    console.log(`Hit object at y=${obj.y}, x=${obj.x}, id=${obj.id}`);
+                };
             });
 
             // Request the next animation frame
@@ -142,7 +150,7 @@ function GameCanvas({ws, userEmail, userX, userY, setX, setY, players, raceStart
         // Start the animation loop
         animationID = requestAnimationFrame(draw);
         return () => cancelAnimationFrame(animationID);
-    }, [players, userX, userY, userEmail, SPRITE_TYPE, sprites, raceStarted, raceFinished, objects]);
+    }, [ws, players, userX, userY, userEmail, SPRITE_TYPE, sprites, raceStarted, raceFinished, objects]);
 
     useEffect(() => {xRef.current = userX;}, [userX]);
     useEffect(() => {yRef.current = userY;}, [userY]);

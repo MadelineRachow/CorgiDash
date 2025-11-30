@@ -6,6 +6,8 @@ from jose import jwt, JWTError
 from dotenv import load_dotenv
 import json
 import time
+import asyncio
+import uuid
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from style_console_text import style_text
 
@@ -26,6 +28,7 @@ player_positions = {}
 leaderboards = {}
 room_last_leaderboard_update: dict[str, float] = {}
 room_objects = {}
+room_locks: dict[str, asyncio.Lock] = {}
 
 async def update_player_position(room_id, email, x, y, username):
     if room_id not in rooms or len(rooms[room_id]) == 0:
@@ -62,6 +65,24 @@ async def update_player_position(room_id, email, x, y, username):
     except Exception as e:
         print(style_text(f"Error:", "bold", "#FF0000"))
         print(style_text(f"Failed to send payload to object generator microservice: {e}", "normal", "#FF5858"))
+
+async def handle_object_hit(room_id, object_id, hit_by_email):
+    if room_id not in room_objects:
+        return
+    
+    lock = room_locks.setdefault(room_id, asyncio.Lock())
+
+    async with lock:
+        objects = room_objects.get(room_id, [])
+        idx = next((i for i, o in enumerate(objects) if o.get("id") == object_id), None)
+        if idx is None: # Already removed by someone else
+            return False
+        objects.pop(idx)
+        room_objects[room_id] = objects
+
+    await manager.broadcast_message(room_id, json.dumps({"type": "objects", "objects": room_objects[room_id]}))
+    print(style_text(f"Object {object_id} removed by {hit_by_email} in {room_id}", "normal", "#A4FF9C"))
+    return True
     
 def authenticate_websocket_jwt(token: str) -> dict:
     try:
@@ -186,6 +207,14 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
                         player_ready.setdefault(room_id, {})[email] = {"ready": ready, "username": username}
                     await manager.broadcast_message(room_id, json.dumps({"type": "ready", "players": player_ready[room_id]}))
 
+                if message.get("type") == "object_hit":
+                    object_id = message.get("object_id")
+                    if object_id and user_email:
+                        try:
+                            await handle_object_hit(room_id, object_id, user_email)
+                        except Exception as e:
+                            print(style_text(f"Error handling object hit: {e}", "bold", "#FF0000"))
+
                 # Update position state dictionary
                 if message.get("type") == "move":
                     email = message.get("email")
@@ -287,6 +316,7 @@ async def generator_endpoint(websocket: WebSocket):
             msg = json.loads(data)
             room_id = msg.get("room_id")
             new_obj = msg.get("object")
+            new_obj.setdefault("id", str(uuid.uuid4()))
 
             if room_id not in room_objects:
                 room_objects[room_id] = []
