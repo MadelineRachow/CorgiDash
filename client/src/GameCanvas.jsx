@@ -1,6 +1,6 @@
 import {useEffect, useRef, useMemo} from 'react';
 
-function GameCanvas({ws, userEmail, userX, userY, setX, setY, players, raceStarted, raceFinished, objects}) {
+function GameCanvas({ws, userEmail, userX, userY, setX, setY, players, raceStarted, raceFinished, objects, corgiSkin}) {
     const canvasRef = useRef(null);
     const backgroundRef = useRef(new Image());
     const spriteRef = useRef(new Image());
@@ -17,8 +17,8 @@ function GameCanvas({ws, userEmail, userX, userY, setX, setY, players, raceStart
 
     // Sprite dictionary (more TBA)
     const sprites = useMemo(() => ({
-        walk: {src: "/assets/corgi_walk/corgi_tri_no_tail_walk_softer.png", frames: 5},
-    }), []);
+        walk: {src: `/assets/corgi_walk/corgi_${corgiSkin}_walk.png`, frames: 5},
+    }), [corgiSkin]);
 
     // Load the background image once on component mount
     useEffect(() => {
