@@ -351,6 +351,10 @@ async def counter_endpoint(websocket: WebSocket):
         while True:
             data = await websocket.receive_text()
             msg = json.loads(data)
+            room_id = msg["room_id"]
+            counts = msg.get("counts", {})
+
+            await manager.broadcast_message(room_id, json.dumps({"type": "object_counts", "counts": counts}))
 
             print(style_text("Object Counter:", "bold", "#9CF0FF"))
             print(style_text(json.dumps(msg, indent=4), "normal", "#D7F4FF"))

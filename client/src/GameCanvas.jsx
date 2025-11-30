@@ -205,7 +205,7 @@ function GameCanvas({ws, userEmail, userX, userY, setX, setY, players, raceStart
                     } else if (obj.type === "obstacle") {
                         applySpeedOverTime(OBSTACLE_MOVE_X, 2000, "sniff", "obstacle");
                     };
-                    console.log(`Hit object at y=${obj.y}, x=${obj.x}, id=${obj.id}`);
+                    // console.log(`Hit object at y=${obj.y}, x=${obj.x}, id=${obj.id}`);
                 };
             });
 

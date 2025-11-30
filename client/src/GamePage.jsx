@@ -25,6 +25,7 @@ function GamePage({supabase}) {
     const [leaderboard, setLeaderboard] = useState([]);
     const [objects, setObjects] = useState([]);
     const [corgiSkin, setCorgiSkin] = useState("");
+    const [objectCounts, setObjectCounts] = useState([]);
  
     function returnToLobby() {
         navigate("/lobby");
@@ -70,7 +71,6 @@ function GamePage({supabase}) {
                 };
                 if (message.type === "objects") {
                     setObjects(message.objects);
-                    console.log(message.objects);
                 };
                 if (message.type === "leaderboard") {
                     setLeaderboard(message.players);
@@ -85,6 +85,10 @@ function GamePage({supabase}) {
                 if (message.type === "finished") {
                     setRaceFinished(true);
                     console.log("Finished!")
+                };
+                if (message.type === "object_counts") {
+                    setObjectCounts(message.counts);
+                    console.log(message.counts)
                 };
             };
 
@@ -190,6 +194,7 @@ function GamePage({supabase}) {
             <GameOverPopup 
                 open={raceFinished}
                 returnToLobby={returnToLobby}
+                objectCounts={objectCounts}
             />
             {(raceStarted && !raceFinished) && (
                 <button onClick={returnToLobby}>Back to lobby</button>
