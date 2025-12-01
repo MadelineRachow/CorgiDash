@@ -10,9 +10,25 @@ from style_console_text import style_text
 Y_SLOTS = []
 FINISH_LINE = 0
 MIN_SPACING = 0.1
-MAX_SPACING = 0.2
+MAX_SPACING = 0.25
 PLAYER_BUFFER = 0.1
-LOOKAHEAD = 5
+LOOKAHEAD = 10
+last_types = []
+
+def choose_object_type():
+    n_boosts = last_types.count("boost")
+    n_obstacles = last_types.count("obstacle")
+    if n_boosts >= 2:
+        weights = [0.1, 0.9]  
+    elif n_obstacles >= 2:
+        weights = [0.9, 0.1]  
+    else:
+        weights = [0.3, 0.7]
+    obj_type = random.choices(["boost", "obstacle"], weights=weights)[0]
+    last_types.append(obj_type)
+    if len(last_types) > 3:  
+        last_types.pop(0)
+    return obj_type
 
 async def main():
     global Y_SLOTS
@@ -45,19 +61,24 @@ async def main():
                 leading_player = max(players, key=lambda p: p[0])
 
                 max_generated_x = room_objects[-1]["x"] if room_objects else 0
-                target_x = leading_player[0] + LOOKAHEAD
+                lookahead_target = leading_player[0] + LOOKAHEAD
+                target_x = min(lookahead_target, FINISH_LINE - MIN_SPACING)
 
                 # Pre-generate objects up to LOOKAHEAD
-                next_x = max_generated_x + random.uniform(MIN_SPACING, MAX_SPACING)
-                while next_x < target_x and next_x < FINISH_LINE - 0.1:
+                safe_start_x = leading_player[0] + PLAYER_BUFFER
+                start_point = max(max_generated_x, safe_start_x)
+                next_x = start_point + random.uniform(MIN_SPACING, MAX_SPACING)
+                # next_x = max_generated_x + random.uniform(MIN_SPACING, MAX_SPACING)
+                # while next_x < target_x and next_x < FINISH_LINE - 0.1:
+                while next_x < target_x:
+                    if next_x >= FINISH_LINE:
+                        break
                     y = random.choice(Y_SLOTS)
                     # Avoid spawning on top of players
                     if all(abs(next_x - px) > PLAYER_BUFFER for px, _ in players):
                         # Bias type
-                        obj_type = random.choices(
-                            ["boost", "obstacle"],
-                            weights=[0.3, 0.7] if next_x < trailing_player[0] + 10 else [0.3, 0.7]
-                        )[0]
+                        # obj_type = random.choices(["boost", "obstacle"], weights=[0.3, 0.7] if next_x < trailing_player[0] + 10 else [0.3, 0.7])[0]
+                        obj_type = choose_object_type()
                         new_obj = {"type": obj_type, "x": next_x, "y": y}
                         room_objects.append(new_obj)
                         await websocket.send(json.dumps({"type": "spawn_object", "room_id": room_id, "object": new_obj}))
@@ -66,7 +87,7 @@ async def main():
                 # Reactive boost for trailing player (spawn occasionally)
                 if random.random() < 0.3:  # 30% chance per tick
                     reactive_x = trailing_player[0] + random.uniform(5, 10)
-                    if all(abs(reactive_x - obj["x"]) > MIN_SPACING for obj in room_objects):
+                    if reactive_x < FINISH_LINE - 0.05 and all(abs(reactive_x - obj["x"]) > MIN_SPACING for obj in room_objects):
                         y = random.choice(Y_SLOTS)
                         reactive_obj = {"type": "boost", "x": reactive_x, "y": y}
                         room_objects.append(reactive_obj)

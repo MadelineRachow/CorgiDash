@@ -26,6 +26,7 @@ function GamePage({supabase}) {
     const [objects, setObjects] = useState([]);
     const [corgiSkins, setCorgiSkins] = useState([]);
     const [objectCounts, setObjectCounts] = useState([]);
+    const [finishLine, setFinishLine] = useState([]);
  
     function returnToLobby() {
         navigate("/lobby");
@@ -88,7 +89,9 @@ function GamePage({supabase}) {
                 };
                 if (message.type === "corgi_skins") {
                     setCorgiSkins(message.players);
-                    console.log(message.players)
+                };
+                if (message.type === "finish_line") {
+                    setFinishLine(message.finish_line);
                 };
             };
 
@@ -194,6 +197,7 @@ function GamePage({supabase}) {
             <GameOverPopup 
                 open={raceFinished}
                 returnToLobby={returnToLobby}
+                leaderboard={leaderboard}
                 objectCounts={objectCounts}
             />
             {(raceStarted && !raceFinished) && (
@@ -211,6 +215,7 @@ function GamePage({supabase}) {
                 raceFinished={raceFinished}
                 objects={objects}
                 corgiSkins={corgiSkins}
+                finishLine={finishLine}
             />
         </div>
     );    

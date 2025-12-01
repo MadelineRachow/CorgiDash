@@ -17,7 +17,7 @@ SUPABASE_URL = os.getenv("SUPABASE_URL", "YOUR_SUPABASE_URL_HERE")
 SUPABASE_AUDIENCE = "authenticated"
 ROOM_CAPACITY = 3 
 Y_SLOTS = [0.75, 0.81, 0.89]
-FINISH_LINE = 2
+FINISH_LINE = 10
 LEADERBOARD_UPDATE_INTERVAL = 0.1
 
 app = FastAPI()
@@ -85,7 +85,6 @@ async def handle_object_hit(room_id, object_id, object_type, hit_by_email):
         await ws3.send_text(json.dumps({"type": "object_hit", "room_id": room_id, "object_type": object_type, "email": hit_by_email}))
 
     await manager.broadcast_message(room_id, json.dumps({"type": "objects", "objects": room_objects[room_id]}))
-    print(style_text(f"Object {object_id} removed by {hit_by_email} in {room_id}", "normal", "#A4FF9C"))
     return True
     
 def authenticate_websocket_jwt(token: str) -> dict:
@@ -198,6 +197,9 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
         # player_positions.setdefault(room_id, {})[user_email] = {"x": 0.0, "y": assigned_y, "username": username}
         await update_player_position(room_id, user_email, 0.0, assigned_y, username, sprite_type="walk")
         await manager.broadcast_message(room_id, json.dumps({"type": "state_update", "players": player_positions[room_id]}))
+        await manager.broadcast_message(room_id, json.dumps({"type": "finish_line", "finish_line": FINISH_LINE}))
+        current_objects = room_objects.get(room_id, [])
+        await manager.broadcast_message(room_id, json.dumps({"type": "objects", "objects": current_objects}))
         if room_id in leaderboards:
             await manager.broadcast_message(room_id, json.dumps({"type": "leaderboard", "players": leaderboards[room_id]}))
 
@@ -365,8 +367,8 @@ async def counter_endpoint(websocket: WebSocket):
 
             await manager.broadcast_message(room_id, json.dumps({"type": "object_counts", "counts": counts}))
 
-            print(style_text("Object Counter:", "bold", "#9CF0FF"))
-            print(style_text(json.dumps(msg, indent=4), "normal", "#D7F4FF"))
+            # print(style_text("Object Counter:", "bold", "#9CF0FF"))
+            # print(style_text(json.dumps(msg, indent=4), "normal", "#D7F4FF"))
 
     except WebSocketDisconnect:
         print(style_text("Object counter microservice disconnected!", "bold", "#9CF0FF"))

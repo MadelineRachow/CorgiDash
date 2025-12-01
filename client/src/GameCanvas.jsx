@@ -1,7 +1,7 @@
 import {useEffect, useRef, useMemo, useState} from 'react';
 
 // NEEDS INTERPOLATION, CORGI MOVEMENT IS NOT SMOOTH CURRENTLY
-function GameCanvas({ws, userEmail, userX, userY, setX, setY, players, raceStarted, raceFinished, objects, corgiSkins, finishLine=2}) {
+function GameCanvas({ws, userEmail, userX, userY, setX, setY, players, raceStarted, raceFinished, objects, corgiSkins, finishLine}) {
     // Constants for game mechanics
     const ANCHOR_X = 0.25;               
     const FRAME_DURATION = 150;
@@ -126,15 +126,15 @@ function GameCanvas({ws, userEmail, userX, userY, setX, setY, players, raceStart
 
             // Draw scrolling background
             if (background && background.complete && background.naturalWidth > 0) {
-                const xOffset = (raceStarted && !raceFinished)
+                const xOffset = Math.floor((raceStarted && !raceFinished)
                     ? (userX * background.width) % background.width
-                    : 0;
+                    : 0);
                 const scale = WORLD_HEIGHT / background.height;
 
                 const drawSegment = (sx, sw, dx) =>
                     context.drawImage(background, sx, 0, sw, background.height, dx * scale, 0, sw * scale, WORLD_HEIGHT);
                 drawSegment(xOffset, background.width - xOffset, 0);
-                drawSegment(0, xOffset, background.width - xOffset);
+                drawSegment(0, xOffset, Math.floor(background.width - xOffset));
 
             } else {
                 // Fallback background if image not loaded
