@@ -149,7 +149,7 @@ function GamePage({supabase}) {
             setTimeout(() => {
                 setCountdown(null);
                 setShowPopup(false);
-            }, 1000); 
+            }, 500); 
             return;
         };
 
@@ -169,8 +169,21 @@ function GamePage({supabase}) {
 
     return (
         <div>
-            <p>Use W or ↑ to move upward</p>
-            <p>Use S or ↓ to move downward</p>
+            <GameCanvas 
+                ws={ws} 
+                userEmail={userEmail}
+                userX={x} 
+                userY={y} 
+                setX={setX} 
+                setY={setY} 
+                players={players}
+                raceStarted={raceStarted}
+                raceFinished={raceFinished}
+                objects={objects}
+                corgiSkins={corgiSkins}
+                finishLine={finishLine}
+            />
+            <button className="corner-button" onClick={returnToLobby}>Back to Lobby</button>
             <div className="system-messages">
                 {systemMessages.map(msg => (<div key={msg.id} className="system-message">{msg.text}</div>))}
             </div>
@@ -178,8 +191,8 @@ function GamePage({supabase}) {
                 open={showPopup}
                 readyPlayers={readyPlayers}
                 countdown={countdown}
+                readyToStart={readyToStart}
                 setReadyToStart={setReadyToStart}
-                returnToLobby={returnToLobby}
             />
             {(raceStarted && !raceFinished) && (
                 <div>
@@ -196,26 +209,8 @@ function GamePage({supabase}) {
             )}
             <GameOverPopup 
                 open={raceFinished}
-                returnToLobby={returnToLobby}
                 leaderboard={leaderboard}
                 objectCounts={objectCounts}
-            />
-            {(raceStarted && !raceFinished) && (
-                <button onClick={returnToLobby}>Back to lobby</button>
-            )}
-            <GameCanvas 
-                ws={ws} 
-                userEmail={userEmail}
-                userX={x} 
-                userY={y} 
-                setX={setX} 
-                setY={setY} 
-                players={players}
-                raceStarted={raceStarted}
-                raceFinished={raceFinished}
-                objects={objects}
-                corgiSkins={corgiSkins}
-                finishLine={finishLine}
             />
         </div>
     );    

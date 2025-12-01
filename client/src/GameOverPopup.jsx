@@ -1,6 +1,6 @@
 import {useState} from 'react';
 
-function GameOverPopup({open, returnToLobby, leaderboard, objectCounts}) {
+function GameOverPopup({open, leaderboard, objectCounts}) {
     const [showStats, setShowStats] = useState(false);
     const toggleStats = () => setShowStats(!showStats);
 
@@ -29,7 +29,6 @@ function GameOverPopup({open, returnToLobby, leaderboard, objectCounts}) {
             <button onClick={toggleStats}>
                 {showStats ? "Hide stats" : "View stats"}
             </button>
-            <button onClick={returnToLobby}>Back to lobby</button>
             {showStats && objectCounts && (
                 <div>
                     <h2>Object Hits</h2>

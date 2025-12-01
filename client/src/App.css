@@ -128,9 +128,9 @@ a {
   border-radius: 30px;
   height: 450px;
   width: 850px;
-  display: flex;              /* make it a flex container */
-  flex-direction: column;     /* stack children vertically */
-  justify-content: center;    /* center children vertically */
+  display: flex;              
+  flex-direction: column;     
+  justify-content: center;    
   align-items: center;
 }
 
@@ -318,4 +318,22 @@ ul li {
 .contact-email {
   text-align: center;
   margin-top: 50px; 
+}
+
+.p-game {
+  margin-top: 15px;
+  margin-bottom: 10px;
+}
+
+.countdown {
+  font-size: 250px;
+  margin-top: 370px;
+  text-shadow: 
+    4px 4px 0 #a35b34, -4px 4px 0 #a35b34, 4px -4px 0 #a35b34, -4px -4px 0 #a35b34,
+    10px 10px 10px #4c3a1e;
+  letter-spacing: 15px;
+}
+
+.instructions {
+  margin-bottom: 0px;
 }

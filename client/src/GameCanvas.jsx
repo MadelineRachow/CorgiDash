@@ -3,7 +3,7 @@ import {useEffect, useRef, useMemo, useState} from 'react';
 // NEEDS INTERPOLATION, CORGI MOVEMENT IS NOT SMOOTH CURRENTLY
 function GameCanvas({ws, userEmail, userX, userY, setX, setY, players, raceStarted, raceFinished, objects, corgiSkins, finishLine}) {
     // Constants for game mechanics
-    const ANCHOR_X = 0.25;               
+    const ANCHOR_X = 0.1;               
     const FRAME_DURATION = 150;
     const DEFAULT_MOVE_X = 0.0025;
     const BOOST_MOVE_X = 0.004;
@@ -322,10 +322,10 @@ function GameCanvas({ws, userEmail, userX, userY, setX, setY, players, raceStart
     }, [userEmail, ws, raceStarted, raceFinished, spriteType, setX, setY]);
 
     return (
-        <div style={{height: "80vh", width: "70vw"}}>
+        <div className="canvas-container">
             <canvas
                 ref={canvasRef}
-                style={{display: "block", border: "5px solid black", imageRendering: "pixelated"}}
+                className="game-canvas"
             />
         </div>
     );
