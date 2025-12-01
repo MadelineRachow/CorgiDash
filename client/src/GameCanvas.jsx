@@ -27,6 +27,16 @@ function GameCanvas({ws, userEmail, userX, userY, setX, setY, players, raceStart
     const boostImageRef = useRef(new Image());
     const obstacleImageRef = useRef(new Image());
 
+    const minecraftFont = new FontFace(
+        "Minecraft",
+        "url(/assets/Minecraft.ttf)"
+    );
+
+    minecraftFont.load().then(function (loadedFont) {
+        document.fonts.add(loadedFont);
+    }).catch(err => console.error("Font load failed:", err));
+
+
     useEffect(() => {
         boostImageRef.current.src = "/assets/bone.png";
         obstacleImageRef.current.src = "/assets/poppy.png";
@@ -130,15 +140,6 @@ function GameCanvas({ws, userEmail, userX, userY, setX, setY, players, raceStart
             canvas.style.height = "85%";
             context.imageSmoothingEnabled = false;
             const background = backgroundRef.current;
-
-            const minecraftFont = new FontFace(
-                "Minecraft",
-                "url(/assets/Minecraft.ttf)"
-            );
-
-            minecraftFont.load().then(function (loadedFont) {
-                document.fonts.add(loadedFont);
-            }).catch(err => console.error("Font load failed:", err));
 
             // Draw scrolling background
             if (background && background.complete && background.naturalWidth > 0) {
