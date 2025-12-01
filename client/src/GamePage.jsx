@@ -25,6 +25,7 @@ function GamePage({supabase}) {
     const [leaderboard, setLeaderboard] = useState([]);
     const [objects, setObjects] = useState([]);
     const [corgiSkin, setCorgiSkin] = useState("");
+    // const [corgiSkins, setCorgiSkins] = useState([]);
     const [objectCounts, setObjectCounts] = useState([]);
  
     function returnToLobby() {
@@ -90,6 +91,10 @@ function GamePage({supabase}) {
                     setObjectCounts(message.counts);
                     console.log(message.counts)
                 };
+                // if (message.type === "corgi_skins") {
+                //     setCorgiSkins(message.players);
+                //     console.log(message.players)
+                // };
             };
 
             // Websocket close event handler

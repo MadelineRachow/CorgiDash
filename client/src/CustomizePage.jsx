@@ -44,7 +44,9 @@ function CustomizePage({supabase}) {
                 const message = JSON.parse(event.data);
                 if (message.type === "corgi_updated") {
                     console.log(`Corgi updated to ${message.corgi_skin}`)
-                    setCurrentSkin(message.corgi_skin);
+                    supabase.auth.refreshSession().then(() => {
+                        setCurrentSkin(message.corgi_skin);
+                    });
                 };
             };
 

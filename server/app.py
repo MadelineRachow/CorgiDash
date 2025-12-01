@@ -22,6 +22,7 @@ LEADERBOARD_UPDATE_INTERVAL = 0.1
 
 app = FastAPI()
 rooms = {}
+room_corgi_skins: dict[str, dict[str, str]] = {}
 player_ready = {}
 player_positions = {}
 leaderboards = {}
@@ -34,9 +35,9 @@ async def update_player_position(room_id, email, x, y, username):
         return
     
     # Update player positions and leaderboard
-    player_positions.setdefault(room_id, {})[email] = {"x": x, "y": y, "username": username}
+    player_positions.setdefault(room_id, {})[email] = {"x": x, "y": y, "email": email, "username": username}
 
-    # ws1 = getattr(app.state, "leaderboard_ws", None)
+    ws1 = getattr(app.state, "leaderboard_ws", None)
     ws2 = getattr(app.state, "generator_ws", None)
     if room_id not in player_positions:
         return
@@ -53,11 +54,11 @@ async def update_player_position(room_id, email, x, y, username):
         "players": player_positions[room_id]
     }
 
-    # try:
-    #     await ws1.send_text(json.dumps(payload))
-    # except Exception as e:
-    #     print(style_text(f"Error:", "bold", "#FF0000"))
-    #     print(style_text(f"Failed to send payload to leaderboard microservice: {e}", "normal", "#FF5858"))
+    try:
+        await ws1.send_text(json.dumps(payload))
+    except Exception as e:
+        print(style_text(f"Error:", "bold", "#FF0000"))
+        print(style_text(f"Failed to send payload to leaderboard microservice: {e}", "normal", "#FF5858"))
 
     try:
         await ws2.send_text(json.dumps(payload))
@@ -173,9 +174,14 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
         user_id = auth_payload.get("sub")
         user_email = auth_payload.get("email") # Get user
         username = auth_payload.get("user_metadata", {}).get("username", user_email) # Get username
-        
+        print(f"username: {username}")
+        corgi_skin = auth_payload.get("user_metadata", {}).get("corgiSkin", "") # Get corgi skin
+        print(f"corgi_skin: {corgi_skin}")
+
         # Add user to the active connection dictionary and get room
         room_id = await manager.connect(user_id, websocket)
+        room_corgi_skins.setdefault(room_id, {})[user_email] = corgi_skin
+        await manager.broadcast_message(room_id, json.dumps({"type": "corgi_skins", "players": room_corgi_skins[room_id]}))
         await manager.broadcast_message(room_id, json.dumps({"type": "join/left", "message": f"{username} joined the game"}))
 
         # Set initial ready state
@@ -266,6 +272,8 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
                 del player_positions[room_id][user_email]
             if user_email in player_ready.get(room_id, {}):
                 del player_ready[room_id][user_email]
+            if room_id in room_corgi_skins and user_email in room_corgi_skins[room_id]:
+                del room_corgi_skins[room_id][user_email]
 
             # If the room is empty, delete the room
             if not rooms[room_id]:
