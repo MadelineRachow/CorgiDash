@@ -295,6 +295,7 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
                     await ws3.send_text(json.dumps({"type": "room_deleted", "room_id": room_id}))
 
         if room_id in player_positions:
+            await manager.broadcast_message(room_id, json.dumps({"type": "ready", "players": player_ready[room_id]}))
             await manager.broadcast_message(room_id, json.dumps({"type": "state_update", "players": player_positions[room_id]}))
             await manager.broadcast_message(room_id, json.dumps({"type": "join/left", "message": f"{username} left the game"}))
         print(style_text(f"User {user_id} disconnected.", "normal", "#FFFFFF"))
