@@ -141,6 +141,27 @@ a {
   overflow-y: auto;
 }
 
+.background-rect.invisible-page {
+  position: absolute;
+  top: 0;                   /* Anchor to top */
+  left: 50%;                /* Keep horizontal center */
+  transform: translateX(-50%); /* Only center horizontally */
+  background: none;
+  border: none;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start; /* Align children to top */
+  align-items: center;         /* Optional: center horizontally */
+  padding: 20px;               /* Optional spacing */
+  height: auto;                /* Expand downward with content */
+  width: 850px;
+  padding-top: 450px;
+}
+
+.background-rect.invisible-page p {
+  margin-top: -20px;
+}
+
 .background-rect > * {
   transform: translateY(-12.5%); 
 }

@@ -187,6 +187,19 @@ function GamePage({supabase}) {
             <div className="system-messages">
                 {systemMessages.map(msg => (<div key={msg.id} className="system-message">{msg.text}</div>))}
             </div>
+            {(raceStarted && !raceFinished) && (
+                <div className="background-rect invisible-page">
+                    <h3><strong>Leaderboard</strong></h3>
+                    {Object.values(leaderboard)
+                        .sort((a, b) => a.ranking - b.ranking)
+                        .map((player, index) => (
+                            <p key={player.username || index}>
+                                {player.username} — #{player.ranking}
+                            </p>
+                        ))
+                    }
+                </div>
+            )}
             <Popup 
                 open={showPopup}
                 readyPlayers={readyPlayers}
@@ -194,19 +207,6 @@ function GamePage({supabase}) {
                 readyToStart={readyToStart}
                 setReadyToStart={setReadyToStart}
             />
-            {(raceStarted && !raceFinished) && (
-                <div>
-                    <p>Leaderboard</p>
-                    {Object.values(leaderboard)
-                        .sort((a, b) => a.ranking - b.ranking)
-                        .map((player, index) => (
-                            <li key={player.username || index}>
-                                {player.username} {player.ranking}
-                            </li>
-                        ))
-                    }
-                </div>
-            )}
             <GameOverPopup 
                 open={raceFinished}
                 leaderboard={leaderboard}
