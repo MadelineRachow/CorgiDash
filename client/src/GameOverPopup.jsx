@@ -6,6 +6,9 @@ function GameOverPopup({open, leaderboard, objectCounts}) {
 
     if (!open) return null;
 
+    const sortedLeaderboard = Object.values(leaderboard).sort((a, b) => a.ranking - b.ranking);
+    const winner = sortedLeaderboard[0];
+
     // Create a mapping from email to username
     const emailToUsername = Object.values(leaderboard).reduce((map, player) => {
         map[player.email] = player.username;
@@ -13,32 +16,38 @@ function GameOverPopup({open, leaderboard, objectCounts}) {
     }, {});
 
     return (
-        <div className="popup">
-            <h1>Game over!</h1>
-            <div>
-                <p>Leaderboard</p>
-                {Object.values(leaderboard)
-                    .sort((a, b) => a.ranking - b.ranking)
-                    .map((player, index) => (
-                        <li key={player.username || index}>
-                            {player.username} {player.ranking}
-                        </li>
-                    ))
-                }
-            </div>
-            <button onClick={toggleStats}>
-                {showStats ? "Hide stats" : "View stats"}
-            </button>
-            {showStats && objectCounts && (
+        // <div className={`background-rect ${showStats ? "long-page center-popup" : ""} center`}>
+        <div className="background-rect long-page center-popup">
+            <div class="scroll-wrapper">
+                <h3>Game over! {winner.username} won!</h3>
                 <div>
-                    <h2>Object Hits</h2>
-                        {Object.entries(objectCounts).map(([email, counts], index) => (
-                            <li key={email || index}>
-                                {emailToUsername[email]}:: Boosts hit: {counts.boosts_hit || 0}, Obstacles hit: {counts.obstacles_hit || 0}
-                            </li>
-                        ))}
+                    <h3 className="leaderboard"><strong>Leaderboard</strong></h3>
+                    {Object.values(leaderboard)
+                        .sort((a, b) => a.ranking - b.ranking)
+                        .map((player, index) => (
+                            <p key={player.username || index}>
+                                {player.username} — #{player.ranking}
+                            </p>
+                        ))
+                    }
                 </div>
-            )}
+                <button onClick={toggleStats} className="big-button">
+                    {showStats ? "Hide stats" : "View stats"}
+                </button>
+                {showStats && objectCounts && (
+                    <div>
+                        <h3 className="counter"><strong>Boost and Obstacle Hits</strong></h3>
+                        {sortedLeaderboard.map((player, index) => {
+                            const counts = objectCounts[player.email] || {};
+                            return (
+                                <p key={player.email || index}>
+                                    {player.username} — Boosts hit: {counts.boosts_hit || 0} | Obstacles hit: {counts.obstacles_hit || 0}
+                                </p>
+                            );
+                        })}
+                    </div>
+                )}
+            </div>
         </div>
     );
 }

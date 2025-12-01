@@ -44,6 +44,11 @@ ul, p {
   padding-right: 10px;
 }
 
+.background-rect.long-page p, .background-rect.center p {
+  text-align: center;
+  padding-right: 0; 
+}
+
 strong {
   color: #f9d06e;
 }
@@ -136,8 +141,8 @@ a {
 
 .background-rect.long-page {
   justify-content: flex-start; 
-  padding: 20px 15px 20px 20px;              
-  box-sizing: border-box;
+  /* padding: 20px 15px 20px 20px;              
+  box-sizing: border-box; */
   overflow-y: auto;
 }
 
@@ -156,6 +161,13 @@ a {
   height: auto;                /* Expand downward with content */
   width: 850px;
   padding-top: 450px;
+}
+
+.center-popup {
+  max-width: 850px;
+  margin: 0 auto;
+  display: block; 
+  text-align: center;
 }
 
 .background-rect.invisible-page p {
@@ -314,8 +326,11 @@ input:focus {
 
 .scroll-wrapper {
   overflow-y: auto;
-  padding-right: 5px; 
   box-sizing: content-box;
+  max-height: 450px;
+  overflow-y: auto;
+  padding: 1rem;
+  box-sizing: border-box;
 }
 
 .scroll-wrapper::-webkit-scrollbar {
@@ -357,4 +372,18 @@ ul li {
 
 .instructions {
   margin-bottom: 0px;
+}
+
+.leaderboard {
+  font-size: 25px;
+  margin-top: -10px;
+}
+
+.counter {
+  font-size: 25px;
+}
+
+.background-rect.center p {
+  text-align: center;
+  padding-right: 0px;
 }

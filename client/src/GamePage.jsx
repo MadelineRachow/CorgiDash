@@ -187,8 +187,8 @@ function GamePage({supabase}) {
             <div className="system-messages">
                 {systemMessages.map(msg => (<div key={msg.id} className="system-message">{msg.text}</div>))}
             </div>
-            {(raceStarted && !raceFinished) && (
-                <div className="background-rect invisible-page">
+            {(raceStarted) && (
+                <div className="background-rect invisible-page center">
                     <h3><strong>Leaderboard</strong></h3>
                     {Object.values(leaderboard)
                         .sort((a, b) => a.ranking - b.ranking)
