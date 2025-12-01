@@ -1,6 +1,5 @@
 import {useState} from "react";
 import {useNavigate} from 'react-router-dom';
-import BackgroundCanvas from "./Background";
 
 function LoginPage({supabase}) {
     const [email, setEmail] = useState("");
@@ -22,7 +21,6 @@ function LoginPage({supabase}) {
 
     return (
         <div>
-            <BackgroundCanvas/>
             <div className="background-rect">
                 <h3>Compete against friends in a corgi dash for the finish line!</h3>
                 <div className="buttons login-buttons">

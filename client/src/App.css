@@ -32,8 +32,29 @@ h3 {
   padding-right: 50px;
 }
 
-p, li, button, input {
-  font-size: 18px;
+ul, p {
+  font-size: 20px;
+  font-family: "Minecraft";
+  color: #eca66d;
+  text-shadow: 
+    1.5px 1.5px 0 #a35b34, -1.5px 1.5px 0 #a35b34, 1.5px -1.5px 0 #a35b34, -1.5px -1.5px 0 #a35b34,
+    3px 3px 3px #4c3a1e;
+  letter-spacing: 3px;
+  text-align: left;
+  padding-right: 10px;
+}
+
+strong {
+  color: #f9d06e;
+}
+
+a {
+  color: #f9d06e; 
+  text-decoration: underline;
+}
+
+.contact-email {
+  text-align: center;
 }
 
 .corgi-btn.selected {
@@ -104,8 +125,19 @@ p, li, button, input {
   align-items: center;
 }
 
+.background-rect.long-page {
+  justify-content: flex-start; 
+  padding: 20px 15px 20px 20px;              
+  box-sizing: border-box;
+  overflow-y: auto;
+}
+
 .background-rect > * {
   transform: translateY(-12.5%); 
+}
+
+.background-rect.long-page > * {
+  transform: none; 
 }
 
 .lobby-user-info {
@@ -235,4 +267,33 @@ input:focus {
   background: linear-gradient(to bottom right, #dddddd, #d1cbc5); 
   -webkit-text-fill-color: #f0a85c; 
   outline: none;
+}
+
+.scroll-wrapper {
+  overflow-y: auto;
+  padding-right: 5px; 
+  box-sizing: content-box;
+}
+
+.scroll-wrapper::-webkit-scrollbar {
+  width: 10px;
+}
+
+.scroll-wrapper::-webkit-scrollbar-thumb {
+  background: #d88d55;
+  border-radius: 10px;
+}
+
+.scroll-wrapper::-webkit-scrollbar-track {
+  background: #2c4e16;
+  border-radius: 10px;
+}
+
+ul li {
+  margin-bottom: 5px; 
+}
+
+.contact-email {
+  text-align: center;
+  margin-top: 50px; 
 }

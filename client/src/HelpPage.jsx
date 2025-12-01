@@ -10,21 +10,26 @@ function HelpPage() {
 
     return (
         <div>
-            <button onClick={returnToLobby}>Back to lobby</button>
-            <h3>Help Page</h3>
-            <ul>
-                <li>Game objective: The goal of CorgiDash is simple: Be the first corgi to cross the finish line!</li>
-                <li>Your corgi will automatically run forward. You only need to steer to avoid danger and collect boosts (W or up arrow to move upward, S or down arrow to move downward)</li>
-                <li>Success depends on how you interact with the items scattered across the track:</li>
-                <ul>
-                    <li>Speed boost: Collecting a bone grants a 3-second speed burst, but you cannot collect another bone while you are currently boosted</li>
-                    <li>Obstacle: Running into a distraction (still deciding on what) causes your corgi to stop and sniff around for 3 seconds</li>
-                </ul>
-                <li>The race begins with a clear visual countdown and ends when the last corgi crosses the finish line</li>
-            </ul>
-            <p>If you have any further questions, please email madelinerachow27@gmail.com!</p>
+            <button className="corner-button" onClick={returnToLobby}>Back to Lobby</button>
+            <div className="background-rect long-page">
+                <div class="scroll-wrapper">
+                    <h3>Help Page</h3>
+                    <ul>
+                        <li><strong>Objective:</strong> Be the first corgi to cross the finish line!</li>
+                        <li><strong>Controls:</strong> Your corgi runs automatically. Use <strong>W / ↑</strong> to move up and <strong>S / ↓</strong> to move down to avoid obstacles and collect boosts.</li>
+                        <li><strong>Track Items:</strong> How you interact with items affects your race:
+                        <ul>
+                            <li><strong>Speed Boost:</strong> Bones give your corgi a 2-second speed burst. You cannot collect another bone while boosted.</li>
+                            <li><strong>Obstacle:</strong> Flowers make your corgi slow down to sniff around for 2 seconds.</li>
+                        </ul>
+                        </li>
+                        <li>The race starts with a clear countdown and ends when the first corgi crosses the finish line.</li>
+                    </ul>
+                    <p className="contact-email">If you have any questions, please contact: <a href="mailto:madelinerachow27@gmail.com">madelinerachow27@gmail.com</a></p>
+                    </div>
+                </div>
         </div>
-    )
+    );
 };
 
 export default HelpPage;
