@@ -95,39 +95,42 @@ function CustomizePage({supabase}) {
     function ConfirmationPopup({corgiType}) {
         if (!open) return null;
 
-        const corgiNames = {
-            "tri_no_tail": "a tricolor corgi with a short tail",
-            "tri": "a tricolor corgi with a long tail",
-            "tan_no_tail": "a tan corgi with a short tail",
-            "tan": "a tan corgi with a long tail",
-        };
-        const corgiName = corgiNames[corgiType];
-
         return (
-            <div className="popup">
-                <h1>Do you wish to select {corgiName} as your new corgi?</h1>
-                    <button onClick={() => {setNewCorgi(corgiType); setOpen(false)}}>Yes</button>
-                    <button onClick={() => {setCorgiType(""); setOpen(false)}}>No</button>
+            <div className="background-rect">
+                <CorgiSprite image_url={`corgi_idle/corgi_${corgiType}_idle_1.png`} className="sprite select-sprite"/>
+                <h3>Is this the corgi you wish to select?</h3>
+                    <div className="button-row">
+                        <button className="small-button" onClick={() => {setNewCorgi(corgiType); setOpen(false)}}>Yes</button>
+                        <button className="small-button" onClick={() => {setCorgiType(""); setOpen(false)}}>No</button>
+                    </div>
             </div>
         )
     };
 
     return (
         <div>
-            <button onClick={returnToLobby}>Back to lobby</button>
-            <h3>Customize your corgi</h3>
-            <button className={currentSkin === "tri_no_tail" ? "corgi-btn selected" : "corgi-btn"} onClick={() => chooseCorgi("tri_no_tail")}>
-                <CorgiSprite image_url={"corgi_idle/corgi_tri_no_tail_idle_1.png"}/>
-            </button>
-            <button className={currentSkin === "tri" ? "corgi-btn selected" : "corgi-btn"} onClick={() => chooseCorgi("tri")}>
-                <CorgiSprite image_url={"corgi_idle/corgi_tri_idle_1.png"}/>
-            </button>
-            <button className={currentSkin === "tan_no_tail" ? "corgi-btn selected" : "corgi-btn"} onClick={() => chooseCorgi("tan_no_tail")}>
-                <CorgiSprite image_url={"corgi_idle/corgi_tan_no_tail_idle_1.png"}/>
-            </button>
-            <button className={currentSkin === "tan" ? "corgi-btn selected" : "corgi-btn"} onClick={() => chooseCorgi("tan")}>
-                <CorgiSprite image_url={"corgi_idle/corgi_tan_idle_1.png"}/>
-            </button>
+            <button className="corner-button" onClick={returnToLobby}>Back to Lobby</button>
+            <div className="background-rect">
+                <h3>Customize your corgi!</h3>
+                <div className="buttons customize-buttons">
+                    <div className="button-row">
+                        <button className={currentSkin === "tri_no_tail" ? "corgi-btn selected" : "corgi-btn"} onClick={() => chooseCorgi("tri_no_tail")}>
+                            <CorgiSprite image_url={"corgi_idle/corgi_tri_no_tail_idle_1.png"} className="sprite customize-sprite"/>
+                        </button>
+                        <button className={currentSkin === "tri" ? "corgi-btn selected" : "corgi-btn"} onClick={() => chooseCorgi("tri")}>
+                            <CorgiSprite image_url={"corgi_idle/corgi_tri_idle_1.png"} className="sprite customize-sprite"/>
+                        </button>
+                    </div>
+                    <div className="button-row">
+                        <button className={currentSkin === "tan_no_tail" ? "corgi-btn selected" : "corgi-btn"} onClick={() => chooseCorgi("tan_no_tail")}>
+                            <CorgiSprite image_url={"corgi_idle/corgi_tan_no_tail_idle_1.png"} className="sprite customize-sprite"/>
+                        </button>
+                        <button className={currentSkin === "tan" ? "corgi-btn selected" : "corgi-btn"} onClick={() => chooseCorgi("tan")}>
+                            <CorgiSprite image_url={"corgi_idle/corgi_tan_idle_1.png"} className="sprite customize-sprite"/>
+                        </button>
+                    </div>
+                </div>
+            </div>
             <ConfirmationPopup corgiType={corgiType}/>
         </div>
     )

@@ -57,8 +57,17 @@ a {
   text-align: center;
 }
 
+.corgi-btn {
+ width: 350px;
+ height: 125px;
+}
+
 .corgi-btn.selected {
-  border: 2px solid red;
+  background: linear-gradient(to bottom right, #eca66d, #d3915c);
+}
+
+.corgi-btn.selected:hover {
+  background: linear-gradient(to bottom right, #b3e3ff, #a7dfff);  
 }
 
 .corgidash-title {
@@ -157,15 +166,28 @@ a {
   letter-spacing: 7px;
 }
 
-.lobby-sprite {
+.sprite {
   width: 64px;               
   height: 64px;              
   background-repeat: no-repeat;
   background-size: 320px 64px; 
   image-rendering: pixelated;
-  transform: scale(3);       
+  transform: scale(3);  
+}
+
+.lobby-sprite {    
   margin-bottom: 50px;  
   margin-right: 40px;
+}
+
+.customize-sprite {   
+  margin-bottom: 30px;  
+  margin-left: 130px;
+}
+
+.select-sprite {
+  transform: scale(5);
+  margin-bottom: 30px;
 }
 
 .buttons {

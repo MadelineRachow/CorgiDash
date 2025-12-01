@@ -1,6 +1,6 @@
 import {useState, useEffect} from "react";
 
-const CorgiSprite = ({image_url}) => {
+const CorgiSprite = ({image_url, className}) => {
     const [frame, setFrame] = useState(0);
     const FRAME_COUNT = 5;
     const FRAME_INTERVAL = 200; // ms
@@ -14,7 +14,7 @@ const CorgiSprite = ({image_url}) => {
 
     return (
         <div
-            className="lobby-sprite"
+            className={className}
             style={{
                 backgroundImage: `url("/assets/${image_url}")`,
                 backgroundPosition: `-${frame * 64}px 0px` 

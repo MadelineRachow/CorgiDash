@@ -42,7 +42,7 @@ function LobbyPage({supabase}) {
             <div className="background-rect">
                 <div className="lobby-user-info">
                     <h3 className="lobby-username">{username}</h3>
-                    <CorgiSprite image_url={`corgi_idle/corgi_${corgiSkin}_idle_1.png`} className="lobby-sprite"/>
+                    <CorgiSprite image_url={`corgi_idle/corgi_${corgiSkin}_idle_1.png`} className="sprite lobby-sprite"/>
                 </div>
                     <div className="buttons lobby-buttons">
                         <div className="button-row">
