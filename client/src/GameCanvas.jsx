@@ -24,6 +24,13 @@ function GameCanvas({ws, userEmail, userX, userY, setX, setY, players, raceStart
     const moveYRef = useRef(DEFAULT_MOVE_Y);
     const activeSpeedRef = useRef(null);
     const [spriteType, setSpriteType] = useState("walk");
+    const boostImageRef = useRef(new Image());
+    const obstacleImageRef = useRef(new Image());
+
+    useEffect(() => {
+        boostImageRef.current.src = "/assets/bone.png";
+        obstacleImageRef.current.src = "/assets/poppy.png";
+    }, []);
 
     // Generate sprite URLs for each player based on their skin
     const sprites = useMemo(() => {
@@ -81,7 +88,7 @@ function GameCanvas({ws, userEmail, userX, userY, setX, setY, players, raceStart
         const WORLD_HEIGHT = 1080;
         const SPRITE_SIZE = 64; 
         const SPRITE_SCALE = 3;
-        const OBJECT_SIZE = 32;
+        const OBJECT_SIZE = 48;
 
         let animationID;
 
@@ -124,6 +131,15 @@ function GameCanvas({ws, userEmail, userX, userY, setX, setY, players, raceStart
             context.imageSmoothingEnabled = false;
             const background = backgroundRef.current;
 
+            const minecraftFont = new FontFace(
+                "Minecraft",
+                "url(/assets/Minecraft.ttf)"
+            );
+
+            minecraftFont.load().then(function (loadedFont) {
+                document.fonts.add(loadedFont);
+            }).catch(err => console.error("Font load failed:", err));
+
             // Draw scrolling background
             if (background && background.complete && background.naturalWidth > 0) {
                 const xOffset = Math.floor((raceStarted && !raceFinished)
@@ -155,9 +171,13 @@ function GameCanvas({ws, userEmail, userX, userY, setX, setY, players, raceStart
             context.stroke();
 
             // Draw all players
-            context.font = "20px Arial";
-            context.fillStyle = "black";
+            context.font = "30px Minecraft";
+            context.fillStyle = "#f9d06e";
             context.textAlign = "center";
+            context.shadowColor = "#47360cff";
+            context.shadowOffsetX = 3;
+            context.shadowOffsetY = 3;
+            context.shadowBlur = 3;
 
             const playersArray = Object.values(players || {});
             playersArray.sort((a, b) => a.y - b.y);
@@ -188,7 +208,7 @@ function GameCanvas({ws, userEmail, userX, userY, setX, setY, players, raceStart
                     px - (SPRITE_SIZE * SPRITE_SCALE) / 2, py - (SPRITE_SIZE * SPRITE_SCALE) / 2,
                     SPRITE_SIZE * SPRITE_SCALE, SPRITE_SIZE * SPRITE_SCALE
                 );
-                context.fillText(player.username || player.email, px, py - (SPRITE_SIZE * SPRITE_SCALE) / 2 - 4);
+                context.fillText(player.username || player.email, px, py - (SPRITE_SIZE * SPRITE_SCALE) / 2 + 45);
             });
 
             // Draw objects (boosts or obstacles)
@@ -196,14 +216,25 @@ function GameCanvas({ws, userEmail, userX, userY, setX, setY, players, raceStart
                 const objScreenX = (obj.x - userX) * (background?.width || WORLD_WIDTH) + ANCHOR_X * WORLD_WIDTH;
                 const objScreenY = obj.y * WORLD_HEIGHT;
                 if (objScreenX + OBJECT_SIZE/2 >= 0 && objScreenX - OBJECT_SIZE/2 <= WORLD_WIDTH) {
-                    context.fillStyle = obj.type === "boost" ? "green" : "red";
-                    context.fillRect(
-                        objScreenX - OBJECT_SIZE / 2,
-                        objScreenY - OBJECT_SIZE / 2 + 30,
-                        OBJECT_SIZE,
-                        OBJECT_SIZE 
-                    );
-                }
+                    const objectImage = (obj.type === "boost") ? boostImageRef.current : obstacleImageRef.current;
+                    if (objectImage.complete && objectImage.naturalWidth > 0) {
+                            context.drawImage(
+                                objectImage,
+                                objScreenX - OBJECT_SIZE / 2,
+                                objScreenY - OBJECT_SIZE / 2 + 25,
+                                OBJECT_SIZE,
+                                OBJECT_SIZE
+                        );
+                    } else {
+                        context.fillStyle = obj.type === "boost" ? "green" : "red";
+                        context.fillRect(
+                            objScreenX - OBJECT_SIZE / 2,
+                            objScreenY - OBJECT_SIZE / 2 + 25,
+                            OBJECT_SIZE,
+                            OBJECT_SIZE
+                        );
+                    };
+                };
             });
 
             // Handle object interactions (boosts/obstacles)

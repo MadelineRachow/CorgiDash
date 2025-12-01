@@ -9,12 +9,6 @@ function GameOverPopup({open, leaderboard, objectCounts}) {
     const sortedLeaderboard = Object.values(leaderboard).sort((a, b) => a.ranking - b.ranking);
     const winner = sortedLeaderboard[0];
 
-    // Create a mapping from email to username
-    const emailToUsername = Object.values(leaderboard).reduce((map, player) => {
-        map[player.email] = player.username;
-        return map;
-    }, {});
-
     return (
         // <div className={`background-rect ${showStats ? "long-page center-popup" : ""} center`}>
         <div className="background-rect long-page center-popup">
