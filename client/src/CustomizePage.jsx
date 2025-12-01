@@ -11,6 +11,7 @@ function CustomizePage({supabase}) {
     const [open, setOpen] = useState(false);
     const [corgiType, setCorgiType] = useState("");
     const [currentSkin, setCurrentSkin] = useState("");
+    const [pendingSkin, setPendingSkin] = useState(null);
 
     useEffect(() => {
         // Flag to prevent state updates after component unmount
@@ -46,6 +47,7 @@ function CustomizePage({supabase}) {
                     console.log(`Corgi updated to ${message.corgi_skin}`)
                     supabase.auth.refreshSession().then(() => {
                         setCurrentSkin(message.corgi_skin);
+                        setPendingSkin(null);
                     });
                 };
             };
@@ -81,6 +83,7 @@ function CustomizePage({supabase}) {
 
     function setNewCorgi(corgiType) {
         console.log(corgiType);
+        setPendingSkin(corgiType);
         if (ws.current && ws.current.readyState === WebSocket.OPEN) {
             ws.current.send(JSON.stringify({type: "customize_corgi", corgi_skin: corgiType}));
         };
@@ -107,6 +110,8 @@ function CustomizePage({supabase}) {
         )
     };
 
+    const activeSkin = pendingSkin ?? currentSkin;
+
     return (
         <div>
             <button className="corner-button" onClick={returnToLobby}>Back to Lobby</button>
@@ -114,18 +119,18 @@ function CustomizePage({supabase}) {
                 <h3>Customize your corgi!</h3>
                 <div className="buttons customize-buttons">
                     <div className="button-row">
-                        <button className={currentSkin === "tri_no_tail" ? "corgi-btn selected" : "corgi-btn"} onClick={() => chooseCorgi("tri_no_tail")}>
+                        <button className={activeSkin === "tri_no_tail" ? "corgi-btn selected" : "corgi-btn"} onClick={() => chooseCorgi("tri_no_tail")}>
                             <CorgiSprite image_url={"corgi_idle/corgi_tri_no_tail_idle_1.png"} className="sprite customize-sprite"/>
                         </button>
-                        <button className={currentSkin === "tri" ? "corgi-btn selected" : "corgi-btn"} onClick={() => chooseCorgi("tri")}>
+                        <button className={activeSkin === "tri" ? "corgi-btn selected" : "corgi-btn"} onClick={() => chooseCorgi("tri")}>
                             <CorgiSprite image_url={"corgi_idle/corgi_tri_idle_1.png"} className="sprite customize-sprite"/>
                         </button>
                     </div>
                     <div className="button-row">
-                        <button className={currentSkin === "tan_no_tail" ? "corgi-btn selected" : "corgi-btn"} onClick={() => chooseCorgi("tan_no_tail")}>
+                        <button className={activeSkin === "tan_no_tail" ? "corgi-btn selected" : "corgi-btn"} onClick={() => chooseCorgi("tan_no_tail")}>
                             <CorgiSprite image_url={"corgi_idle/corgi_tan_no_tail_idle_1.png"} className="sprite customize-sprite"/>
                         </button>
-                        <button className={currentSkin === "tan" ? "corgi-btn selected" : "corgi-btn"} onClick={() => chooseCorgi("tan")}>
+                        <button className={activeSkin === "tan" ? "corgi-btn selected" : "corgi-btn"} onClick={() => chooseCorgi("tan")}>
                             <CorgiSprite image_url={"corgi_idle/corgi_tan_idle_1.png"} className="sprite customize-sprite"/>
                         </button>
                     </div>
