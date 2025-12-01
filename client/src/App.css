@@ -20,7 +20,16 @@ h1 {
 }
 
 h3 {
-  font-size: 22px;
+  font-size: 35px;
+  font-family: "Minecraft";
+  color: #eca66d;
+  text-shadow: 
+    1.5px 1.5px 0 #a35b34, -1.5px 1.5px 0 #a35b34, 1.5px -1.5px 0 #a35b34, -1.5px -1.5px 0 #a35b34,
+    3px 3px 3px #4c3a1e;
+  letter-spacing: 3px;
+  text-align: center;
+  padding-left: 50px;
+  padding-right: 50px;
 }
 
 p, li, button, input {
@@ -84,7 +93,7 @@ p, li, button, input {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -41%);
-  background: linear-gradient(to bottom, #467429, #609138); 
+  background: linear-gradient(to bottom, #84bd56, #467429);
   border: 5px solid #a35b34;
   border-radius: 30px;
   height: 450px;
@@ -122,18 +131,28 @@ p, li, button, input {
   margin-bottom: 50px;  
 }
 
-.lobby-buttons {
+.buttons {
   display: flex;
   flex-direction: column;
   align-items: center; 
   gap: 15px;
+}
+
+.lobby-buttons {
   transform: translateY(65%);
 }
 
 .button-row {
   display: flex;
   justify-content: center;
+  align-items: center;
   gap: 10px;     
+}
+
+.input-col {
+  display: flex;
+  flex-direction: column; 
+  gap: 15px;
 }
 
 button {
@@ -144,11 +163,16 @@ button {
     1.5px 1.5px 0 #a35b34, -1.5px 1.5px 0 #a35b34, 1.5px -1.5px 0 #a35b34, -1.5px -1.5px 0 #a35b34,
     3px 3px 3px #4c3a1e;
   letter-spacing: 2px;
-  background: linear-gradient(to bottom right, #faf4ee, #f8e8da); 
+  background: linear-gradient(to bottom right, #ffdec0, #ffd9b6); 
   height: 70px;
   border: 3px solid #a35b34;
   border-radius: 30px;
   padding-top: 5px;
+  cursor: pointer;
+}
+
+button:hover {
+  background: linear-gradient(to bottom right, #b3e3ff, #a7dfff);  
 }
 
 .big-button {
@@ -157,4 +181,39 @@ button {
 
 .small-button {
   width: 350px;
+}
+
+.input-field {
+  width: 560px;
+}
+
+.submit-button {
+  width: 140px;
+  height: 155px;
+}
+
+input {
+  font-family: "Minecraft";
+  font-size: 30px;
+  color: #eca66d;
+  -webkit-text-fill-color: #eca66d;
+  text-shadow: 
+    1.5px 1.5px 0 #a35b34, -1.5px 1.5px 0 #a35b34, 1.5px -1.5px 0 #a35b34, -1.5px -1.5px 0 #a35b34,
+    3px 3px 3px #4c3a1e;
+  letter-spacing: 2px;
+  background: linear-gradient(to bottom right, #ffffff, #fff8f1); 
+  height: 70px;
+  border: 3px solid #a35b34;
+  border-radius: 30px;
+  padding-top: 5px;
+  outline: none;        
+  cursor: text;         
+  box-sizing: border-box;  
+  text-align: center;
+}
+
+input:focus {
+  background: linear-gradient(to bottom right, #dddddd, #d1cbc5); 
+  -webkit-text-fill-color: #f0a85c; 
+  outline: none;
 }

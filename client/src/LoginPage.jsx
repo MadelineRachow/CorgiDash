@@ -1,5 +1,6 @@
 import {useState} from "react";
 import {useNavigate} from 'react-router-dom';
+import BackgroundCanvas from "./Background";
 
 function LoginPage({supabase}) {
     const [email, setEmail] = useState("");
@@ -21,12 +22,23 @@ function LoginPage({supabase}) {
 
     return (
         <div>
-            <h3>Compete against friends in a corgi dash for the finish line!</h3>
-            <input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)}/>
-            <input type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)}/>
-            <button onClick={handleLogin}>Login</button>
-            <button onClick={createAccountButton}>New User? Create Account</button>
-            <button onClick={forgotPasswordButton}>Forgot Password?</button>
+            <BackgroundCanvas/>
+            <div className="background-rect">
+                <h3>Compete against friends in a corgi dash for the finish line!</h3>
+                <div className="buttons login-buttons">
+                    <div className="button-row">
+                        <div className="input-col">
+                            <input className="input-field" type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)}/>
+                            <input className="input-field" type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)}/>
+                        </div>
+                        <button className="submit-button" onClick={handleLogin}>Login</button>
+                    </div>
+                    <div className="button-row">
+                        <button className="small-button" onClick={createAccountButton}>Create Account</button>
+                        <button className="small-button" onClick={forgotPasswordButton}>Forgot Password?</button>
+                    </div>
+                </div>
+            </div>
         </div>
     );
 };

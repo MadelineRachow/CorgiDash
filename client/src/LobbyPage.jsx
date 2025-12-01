@@ -1,6 +1,5 @@
 import {useEffect, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
-import "./App.css";
 import BackgroundCanvas from "./Background";
 import CorgiSprite from "./CorgiSprite";
 
@@ -47,7 +46,7 @@ function LobbyPage({supabase}) {
                     <h3 className="lobby-username">{username}</h3>
                     <CorgiSprite image_url={`corgi_idle/corgi_${corgiSkin}_idle_1.png`} className="lobby-sprite"/>
                 </div>
-                    <div className="lobby-buttons">
+                    <div className="buttons lobby-buttons">
                         <div className="button-row">
                             <button className="big-button" onClick={customizePageButton}>Customize Your Corgi</button>
                         </div>
