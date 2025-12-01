@@ -139,7 +139,8 @@ function GameCanvas({ws, userEmail, userX, userY, setX, setY, players, raceStart
             } else {
                 // Fallback background if image not loaded
                 context.clearRect(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
-                context.fillStyle = "#cfe"; context.fillRect(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
+                context.fillStyle = "#cfe"; 
+                context.fillRect(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
             };
 
             // Draw finish line

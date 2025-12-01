@@ -1,7 +1,18 @@
+@font-face {
+  font-family: 'Minecraft';
+  src: url('assets/Minecraft.ttf') format('truetype');
+}
+
 html, body, #root {
   margin: 0;
   padding: 0;
   overflow: hidden;
+  height: 100%;
+  width: 100%;
+}
+
+body {
+  background: linear-gradient(to bottom, #41b5f8, #b3e3ff);
 }
 
 h1 {
@@ -17,47 +28,133 @@ p, li, button, input {
 }
 
 .corgi-btn.selected {
-    border: 2px solid red;
+  border: 2px solid red;
 }
 
-/* .gameBackground {
-  background-image: url('D:/CS PROJECTS/CorgiDash/client/src/assets/game_background.jpg');
-  background-repeat: no-repeat;
-  background-size: cover;
-  height: 100vh;
-}
-
-.gamePlayableArea {
-  position: relative;
-  width: 99vw;
-  height: 99vh;
-}
-
-.gamePlayableArea h2 {
-  margin: 0;
-  padding: 0;
-}
-
-.playerModel {
+.corgidash-title {
   position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -155%);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 5;
 }
 
-.playerSprite {
-  width: 64px;
-  height: 64px;
-  background-image: url('D:/CS PROJECTS/CorgiDash/client/public/assets/corgi_walk/corgi_tri_no_tail_walk.png');
+.footer {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, 2000%);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 20px;
+  font-family: "Minecraft";
+  color: #eca66d;
+  text-shadow: 
+    1.5px 1.5px 0 #a35b34, -1.5px 1.5px 0 #a35b34, 1.5px -1.5px 0 #a35b34, -1.5px -1.5px 0 #a35b34,
+    3px 3px 3px #4c3a1e;
+  letter-spacing: 2px;
+  z-index: 5;  
+}
+
+.canvas-container {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 70vw;
+  height: 80vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.game-canvas {
+  display: block;
+  border: 10px solid #a35b34;
+  border-radius: 30px;
+  image-rendering: pixelated; 
+}
+
+.background-rect {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -41%);
+  background: linear-gradient(to bottom, #467429, #609138); 
+  border: 5px solid #a35b34;
+  border-radius: 30px;
+  height: 450px;
+  width: 850px;
+}
+
+.lobby-user-info {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -107%);
+  display: flex;
+  justify-content: center;
+  align-items: center; 
+}
+
+.lobby-username {
+  font-size: 75px;
+  font-family: "Minecraft";
+  color: #eca66d;
+  text-shadow: 
+    3px 3px 0 #a35b34, -3px 3px 0 #a35b34, 3px -3px 0 #a35b34, -3px -3px 0 #a35b34,
+    5px 5px 5px #4c3a1e;
+  letter-spacing: 7px;
+}
+
+.lobby-sprite {
+  width: 64px;               
+  height: 64px;              
   background-repeat: no-repeat;
-  animation: walkCycle 1s steps(5) infinite;
-  transform: scale(2);
-  transform-origin: top left;
+  background-size: 320px 64px; 
   image-rendering: pixelated;
+  transform: scale(3);       
+  margin-left: 30px;
+  margin-bottom: 50px;  
 }
 
-@keyframes walkCycle {
-  from {
-    background-position: 0 0;
-  }
-  to {
-    background-position: -320px 0;
-  }
-} */
+.lobby-buttons {
+  display: flex;
+  flex-direction: column;
+  align-items: center; 
+  gap: 15px;
+  transform: translateY(65%);
+}
+
+.button-row {
+  display: flex;
+  justify-content: center;
+  gap: 10px;     
+}
+
+button {
+  font-family: "Minecraft";
+  font-size: 30px;
+  color: #eca66d;
+  text-shadow: 
+    1.5px 1.5px 0 #a35b34, -1.5px 1.5px 0 #a35b34, 1.5px -1.5px 0 #a35b34, -1.5px -1.5px 0 #a35b34,
+    3px 3px 3px #4c3a1e;
+  letter-spacing: 2px;
+  background: linear-gradient(to bottom right, #faf4ee, #f8e8da); 
+  height: 70px;
+  border: 3px solid #a35b34;
+  border-radius: 30px;
+  padding-top: 5px;
+}
+
+.big-button {
+  width: 710px;
+}
+
+.small-button {
+  width: 350px;
+}

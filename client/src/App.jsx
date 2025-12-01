@@ -48,7 +48,7 @@ function App() {
     // If user is logged in, redirect the to lobby (Otherwise, show the login page)
     return (
         <Router>
-            <h1>CorgiDash</h1>
+            <img src="/assets/CorgiDash.png" className="corgidash-title" alt=""/>
             <Routes>
                 <Route path="/login" element={user ? <Navigate to="/lobby" replace/> : <LoginPage supabase={supabase}/>}/>
                 <Route path="/createaccount" element={user ? <Navigate to="/lobby" replace/> : <CreateAccountPage supabase={supabase}/>}/>
@@ -60,7 +60,7 @@ function App() {
                 <Route path="/help" element={<ProtectedRoute user={user}><HelpPage/></ProtectedRoute>}/>
                 <Route path="*" element={<Navigate to={user ? "/lobby" : "/login"} replace/>}/>
             </Routes>
-            <p>@ Madeline Rachow 2025</p>
+            <p className="footer">@ Madeline Rachow 2025</p>
         </Router>
     )
 };
