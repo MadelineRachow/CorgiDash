@@ -1,16 +1,9 @@
 import {useEffect, useRef, useMemo, useState} from 'react';
 
-function GameCanvas({ws, userEmail, userX, userY, setX, setY, players, raceStarted, raceFinished, objects, corgiSkin, finishLine=2}) {
-    const canvasRef = useRef(null);
-    const backgroundRef = useRef(new Image());
-    const spriteRef = useRef(new Image());
-    const frameRef = useRef(0);
-    const lastFrameUpdateRef = useRef(0);
-    const xRef = useRef(userX);
-    const yRef = useRef(userY);
-    const [spriteType, setSpriteType] = useState("walk");
-
-    const ANCHOR_X = 0.25;
+// NEEDS INTERPOLATION, CORGI MOVEMENT IS NOT SMOOTH CURRENTLY
+function GameCanvas({ws, userEmail, userX, userY, setX, setY, players, raceStarted, raceFinished, objects, corgiSkins, finishLine=2}) {
+    // Constants for game mechanics
+    const ANCHOR_X = 0.25;               
     const FRAME_DURATION = 150;
     const DEFAULT_MOVE_X = 0.0025;
     const BOOST_MOVE_X = 0.004;
@@ -18,85 +11,141 @@ function GameCanvas({ws, userEmail, userX, userY, setX, setY, players, raceStart
     const DEFAULT_MOVE_Y = 0.01;
     const BOOST_MOVE_Y = 0.012;
     const OBSTACLE_MOVE_Y = 0.008;
+    const DEFAULT_SKIN = "tri_no_tail";
+
+    // Refs for DOM elements and game state
+    const canvasRef = useRef(null);
+    const backgroundRef = useRef(new Image());
+    const xRef = useRef(userX);
+    const yRef = useRef(userY);
+    const playerFramesRef = useRef({});        
+    const playerLastFrameRef = useRef({}); 
     const moveXRef = useRef(DEFAULT_MOVE_X);
     const moveYRef = useRef(DEFAULT_MOVE_Y);
     const activeSpeedRef = useRef(null);
+    const [spriteType, setSpriteType] = useState("walk");
 
-    // Sprite dictionary
-    const sprites = useMemo(() => ({
-        walk: {src: `/assets/corgi_walk/corgi_${corgiSkin}_walk.png`, frames: 5},
-        run: {src: `/assets/corgi_run/corgi_${corgiSkin}_run.png`, frames: 8},
-        sniff: {src: `/assets/corgi_sniff/corgi_${corgiSkin}_sniff_walk.png`, frames: 8},
-        sit: {src: `/assets/corgi_sit/corgi_${corgiSkin}_sit.png`, frames: 9},
-    }), [corgiSkin]);
+    // Generate sprite URLs for each player based on their skin
+    const sprites = useMemo(() => {
+        const spritesMap = {};
+        Object.values(players || {}).forEach(player => {
+            const skin = corgiSkins?.[player.email] || DEFAULT_SKIN;
+            spritesMap[player.email] = {
+                walk: {src: `/assets/corgi_walk/corgi_${skin}_walk.png`, frames: 5},
+                run: {src: `/assets/corgi_run/corgi_${skin}_run.png`, frames: 8},
+                sniff: {src: `/assets/corgi_sniff/corgi_${skin}_sniff_walk.png`, frames: 8},
+                sit: {src: `/assets/corgi_sit/corgi_${skin}_sit.png`, frames: 9},
+            };
+        });
+        return spritesMap;
+    }, [players, corgiSkins]);
 
+    // Preload sprite images for rendering
     const spriteImages = useMemo(() => {
         const imgs = {};
-        Object.keys(sprites).forEach(key => {
-            const img = new Image();
-            img.src = sprites[key].src;
-            imgs[key] = img;
+        Object.entries(sprites).forEach(([email, spriteSet]) => {
+            imgs[email] = {};
+            Object.entries(spriteSet).forEach(([type, {src}]) => {
+                const img = new Image();
+                img.src = src;
+                imgs[email][type] = img;
+            });
         });
         return imgs;
     }, [sprites]);
 
-    // Load the background image once on component mount
+    // Load background image
     useEffect(() => {
         backgroundRef.current.src = "/assets/game_background.jpg";
     }, []);
-    
-    // Whenever sprite type changes, update sprite image
-    useEffect(() => {
-        spriteRef.current.src = spriteImages[spriteType].src;
-        frameRef.current = 0; // Reset animation to first frame
-    }, [spriteType, spriteImages]); 
 
+    // Change sprite to "sit" when race finishes
     useEffect(() => {
-        if (raceFinished) {
+        if (raceFinished && ws.current?.readyState === WebSocket.OPEN) {
             setSpriteType("sit");
-        } else if (!raceFinished && spriteType === "sit") {
-            setSpriteType("walk"); 
-        };
-    }, [raceFinished, spriteType]);
+            const x = xRef.current;
+            const y = yRef.current;
 
+            ws.current.send(JSON.stringify({type: "move", email: userEmail, x, y, spriteType: "sit"}));
+        };
+    }, [raceFinished, spriteType, userEmail, ws]);
+
+    // Main drawing and animation loop
     useEffect(() => {
         const canvas = canvasRef.current;
+        if (!canvas) return;
         const context = canvas.getContext("2d");
-        
+
+        // World and sprite sizes
         const WORLD_WIDTH = 1920;
         const WORLD_HEIGHT = 1080;
-        const SPRITE_SIZE = 64; // Height and width of single sprite frame
+        const SPRITE_SIZE = 64; 
         const SPRITE_SCALE = 3;
         const OBJECT_SIZE = 32;
 
         let animationID;
 
+        // Update animation frame for a player
+        function updatePlayerFrame(email, pSpriteType, timestamp) {
+            if (!(email in playerFramesRef.current)) playerFramesRef.current[email] = 0;
+            if (!(email in playerLastFrameRef.current)) playerLastFrameRef.current[email] = timestamp;
+
+            const lastTs = playerLastFrameRef.current[email];
+            const elapsed = timestamp - lastTs;
+
+            if (elapsed > FRAME_DURATION) {
+                const framesCount = (sprites[pSpriteType] && sprites[pSpriteType].frames) ? sprites[pSpriteType].frames : 5;
+
+                if (pSpriteType === "sit") {
+                    // Sit animation loops from frame 3 onwards
+                    const cur = playerFramesRef.current[email];
+                    if (cur < 2) {
+                        playerFramesRef.current[email] = cur + 1;
+                    } else {
+                        const loopStart = 3;
+                        const loopLen = Math.max(framesCount - loopStart, 1);
+                        playerFramesRef.current[email] = loopStart + ((cur - loopStart + 1) % loopLen);
+                    };
+
+                } else {
+                    // Other animations loop normally
+                    playerFramesRef.current[email] = (playerFramesRef.current[email] + 1) % framesCount;
+                };
+                playerLastFrameRef.current[email] = timestamp;
+            };
+        };
+
+        // Draw background, players, objects, and finish line
         function draw(timestamp) {
             canvas.width = WORLD_WIDTH;
             canvas.height = WORLD_HEIGHT;
             canvas.style.width = "85%";
             canvas.style.height = "85%";
             context.imageSmoothingEnabled = false;
-            
-            // Draw background
             const background = backgroundRef.current;
-            const xOffset = (raceStarted && !raceFinished)
-                // ? (userX * moveXRef.current * background.width) % background.width
-                ? (userX * background.width) % background.width
-                : 0;
-            const scale = WORLD_HEIGHT / background.height;
 
-            const drawSegment = (sx, sw, dx) => // source x, source width, destination x
-                context.drawImage(background, sx, 0, sw, background.height, dx * scale, 0, sw * scale, WORLD_HEIGHT);
+            // Draw scrolling background
+            if (background && background.complete && background.naturalWidth > 0) {
+                const xOffset = (raceStarted && !raceFinished)
+                    ? (userX * background.width) % background.width
+                    : 0;
+                const scale = WORLD_HEIGHT / background.height;
 
-            drawSegment(xOffset, background.width - xOffset, 0);
-            drawSegment(0, xOffset, background.width - xOffset);
+                const drawSegment = (sx, sw, dx) =>
+                    context.drawImage(background, sx, 0, sw, background.height, dx * scale, 0, sw * scale, WORLD_HEIGHT);
+                drawSegment(xOffset, background.width - xOffset, 0);
+                drawSegment(0, xOffset, background.width - xOffset);
+
+            } else {
+                // Fallback background if image not loaded
+                context.clearRect(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
+                context.fillStyle = "#cfe"; context.fillRect(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
+            };
 
             // Draw finish line
-            const finishX = (finishLine - userX - 0.005) * background.width + ANCHOR_X * WORLD_WIDTH;
+            const finishX = (finishLine - userX - 0.005) * (background?.width || WORLD_WIDTH) + ANCHOR_X * WORLD_WIDTH;
             const finishYStart = 0.70 * WORLD_HEIGHT;
             const finishYEnd = 1.00 * WORLD_HEIGHT;
-
             context.strokeStyle = "black";
             context.lineWidth = 5;
             context.beginPath();
@@ -104,61 +153,47 @@ function GameCanvas({ws, userEmail, userX, userY, setX, setY, players, raceStart
             context.lineTo(finishX, finishYEnd);
             context.stroke();
 
-            // Handle animation frames on timed interval (FRAME_DURATION)
-            if (!lastFrameUpdateRef.current) {
-                lastFrameUpdateRef.current = timestamp;
-            };
-
-            const elapsed = timestamp - lastFrameUpdateRef.current;
-            if (elapsed > FRAME_DURATION) {
-                if (spriteType === "sit") {
-                    if (frameRef.current < 2) {
-                        frameRef.current += 1; // Play first 3 frames
-                    } else {
-                        frameRef.current = 3 + ((frameRef.current - 3 + 1) % 6); // Loop last 5 frames
-                    };
-                } else {
-                    frameRef.current = (frameRef.current + 1) % sprites[spriteType].frames;
-                }
-                lastFrameUpdateRef.current = timestamp;
-            };
-
-            // Text settings for player email
+            // Draw all players
             context.font = "20px Arial";
             context.fillStyle = "black";
             context.textAlign = "center";
 
-            // Loop over all players and draw them (TODO: interpolation?)
-            const playersArray = Object.values(players);
+            const playersArray = Object.values(players || {});
             playersArray.sort((a, b) => a.y - b.y);
 
             playersArray.forEach(player => {
-                let px = (player.email === userEmail)
-                    ? ANCHOR_X * WORLD_WIDTH // Other player's relative X coord
-                    : player.x - userX + ANCHOR_X * WORLD_WIDTH // Player's relative X coord Will want to store userX locally (VERY IMPORTANT)
-                const py = player.y * WORLD_HEIGHT;
+                const email = player.email;
+                const pSpriteType = (email === userEmail) ? spriteType : (player.spriteType || "walk");
+                updatePlayerFrame(email, pSpriteType, timestamp);
 
-                // Draw the current animation frame of the sprite
+                const anchorX_px = ANCHOR_X * WORLD_WIDTH;
+                const px = (email === userEmail)
+                    ? anchorX_px
+                    : ((player.x - userX) * (background?.width || WORLD_WIDTH) + anchorX_px);
+                const py = (player.y || 0) * WORLD_HEIGHT;
+
+                const img = (spriteImages[email] && spriteImages[email][pSpriteType]) || spriteImages[email]?.walk;
+                if (!img || !img.complete || img.naturalWidth === 0) {
+                    return;
+                }
+
+                const frameIndex = playerFramesRef.current[email] || 0;
+                const sx = frameIndex * SPRITE_SIZE;
+                const sy = 0;
+
                 context.drawImage(
-                    spriteRef.current,
-                    frameRef.current * SPRITE_SIZE, 0, // Source X and Y coords
-                    SPRITE_SIZE, SPRITE_SIZE, // Source width and height
-                    px - (SPRITE_SIZE * SPRITE_SCALE) / 2, py - (SPRITE_SIZE * SPRITE_SCALE) / 2, // Destination X and Y coords
-                    SPRITE_SIZE * SPRITE_SCALE, SPRITE_SIZE * SPRITE_SCALE // Destination width and height
+                    img,
+                    sx, sy, SPRITE_SIZE, SPRITE_SIZE,
+                    px - (SPRITE_SIZE * SPRITE_SCALE) / 2, py - (SPRITE_SIZE * SPRITE_SCALE) / 2,
+                    SPRITE_SIZE * SPRITE_SCALE, SPRITE_SIZE * SPRITE_SCALE
                 );
-
-                // Draw player username/email above sprite
-                context.fillText(player.username, px, py - (SPRITE_SIZE * SPRITE_SCALE) / 2 - 4);
+                context.fillText(player.username || player.email, px, py - (SPRITE_SIZE * SPRITE_SCALE) / 2 - 4);
             });
 
-            // Draw speed boosts and obstacles
+            // Draw objects (boosts or obstacles)
             objects.forEach(obj => {
-                // Compute screen X relative to player anchor
-                // const objScreenX = (obj.x - userX) * moveXRef.current * backgroundRef.current.width + ANCHOR_X * WORLD_WIDTH;
-                const objScreenX = (obj.x - userX) * background.width + ANCHOR_X * WORLD_WIDTH;
+                const objScreenX = (obj.x - userX) * (background?.width || WORLD_WIDTH) + ANCHOR_X * WORLD_WIDTH;
                 const objScreenY = obj.y * WORLD_HEIGHT;
-
-                // Only draw if on screen
                 if (objScreenX + OBJECT_SIZE/2 >= 0 && objScreenX - OBJECT_SIZE/2 <= WORLD_WIDTH) {
                     context.fillStyle = obj.type === "boost" ? "green" : "red";
                     context.fillRect(
@@ -168,65 +203,55 @@ function GameCanvas({ws, userEmail, userX, userY, setX, setY, players, raceStart
                         OBJECT_SIZE 
                     );
                 }
-            }); 
+            });
 
-            function applySpeedOverTime(targetSpeedX, targetSpeedY, duration = 2000, spriteType, type) {
+            // Handle object interactions (boosts/obstacles)
+            function applySpeedOverTime(targetSpeedX, targetSpeedY, duration = 2000, sType, type) {
                 const startTime = performance.now();
                 const startSpeedX = DEFAULT_MOVE_X;
                 const startSpeedY = DEFAULT_MOVE_Y;
-
-                setSpriteType(spriteType);
+                setSpriteType(sType);
                 activeSpeedRef.current = type;
 
                 function updateSpeed(currentTime) {
                     const elapsed = currentTime - startTime;
-                    const t = Math.min(elapsed / duration, 1); // 0 → 1
+                    const t = Math.min(elapsed / duration, 1);
 
                     let factor;
-
-                    if (t < 0.125) {
-                        factor = t / 0.125; 
-                    } else if (t > 0.875) {
-                        factor = (1 - t) / 0.125; 
-                    } else {
-                        factor = 1;
-                    };
+                    if (t < 0.125) factor = t / 0.125;
+                    else if (t > 0.875) factor = (1 - t) / 0.125;
+                    else factor = 1;
 
                     moveXRef.current = startSpeedX + factor * (targetSpeedX - startSpeedX);
                     moveYRef.current = startSpeedY + factor * (targetSpeedY - startSpeedY);
 
-                    if (t < 1) {
-                        requestAnimationFrame(updateSpeed);
-                    } else {
+                    if (t < 1) requestAnimationFrame(updateSpeed);
+                    else {
                         moveXRef.current = DEFAULT_MOVE_X;
                         moveYRef.current = DEFAULT_MOVE_Y;
                         setSpriteType("walk");
                         activeSpeedRef.current = null;
                     };
                 };
-
                 requestAnimationFrame(updateSpeed);
             };
 
-            // Handle collision with speed boosts and obstacles
             objects.forEach(obj => {
                 let hit = false;
-
                 if (obj.y === 0.75 && userY >= 0.75 && userY <= 0.80) hit = true;
                 if (obj.y === 0.81 && userY >= 0.79 && userY <= 0.87) hit = true;
                 if (obj.y === 0.89 && userY >= 0.86 && userY <= 0.89) hit = true;
 
-                // Small margin for x collision
                 const objLeft = obj.x;
-                const objRight = obj.x + 0.05; 
+                const objRight = obj.x + 0.05;
 
                 if (hit && userX >= objLeft && userX <= objRight) {
                     const canCollect =
                         (obj.type === "boost" && activeSpeedRef.current !== "boost") ||
                         (obj.type === "obstacle" && activeSpeedRef.current !== "obstacle");
-
                     if (!canCollect) return;
 
+                    // Notify server about object hit
                     if (ws.current?.readyState === WebSocket.OPEN) {
                         ws.current.send(JSON.stringify({
                             type: "object_hit",
@@ -235,50 +260,44 @@ function GameCanvas({ws, userEmail, userX, userY, setX, setY, players, raceStart
                             email: userEmail
                         }));
                     };
-                    if (obj.type === "boost") {
-                        applySpeedOverTime(BOOST_MOVE_X, BOOST_MOVE_Y, 2000, "run", "boost");
-                    } else if (obj.type === "obstacle") {
-                        applySpeedOverTime(OBSTACLE_MOVE_X, OBSTACLE_MOVE_Y, 2000, "sniff", "obstacle");
-                    };
-                    // console.log(`Hit object at y=${obj.y}, x=${obj.x}, id=${obj.id}`);
+
+                    if (obj.type === "boost") applySpeedOverTime(BOOST_MOVE_X, BOOST_MOVE_Y, 2000, "run", "boost");
+                    else if (obj.type === "obstacle") applySpeedOverTime(OBSTACLE_MOVE_X, OBSTACLE_MOVE_Y, 2000, "sniff", "obstacle");
                 };
             });
-
-            // Request the next animation frame
             animationID = requestAnimationFrame(draw);
-        }
-        // Start the animation loop
+        };
         animationID = requestAnimationFrame(draw);
         return () => cancelAnimationFrame(animationID);
-    }, [ws, players, userX, userY, userEmail, spriteType, sprites, raceStarted, raceFinished, objects, finishLine]);
+    }, [ws, players, userX, userY, userEmail, spriteType, sprites, spriteImages, raceStarted, raceFinished, objects, finishLine]);
 
-    useEffect(() => {xRef.current = userX;}, [userX]);
-    useEffect(() => {yRef.current = userY;}, [userY]);
+    // Keep refs updated for latest positions
+    useEffect(() => { xRef.current = userX; }, [userX]);
+    useEffect(() => { yRef.current = userY; }, [userY]);
 
-    // Handles player movement
+    // Handle continuous movement and keyboard input
     useEffect(() => {
-        const THROTTLE_MS = 50;
+        const THROTTLE_MS = 0;
         let lastSent = 0;
 
         const sendMove = () => {
             const now = Date.now();
             if (now - lastSent > THROTTLE_MS && ws.current?.readyState === WebSocket.OPEN) {
-                ws.current.send(JSON.stringify({type: "move", email: userEmail, x: xRef.current, y: yRef.current}));
+                ws.current.send(JSON.stringify({type: "move", email: userEmail, x: xRef.current, y: yRef.current, spriteType}));
                 lastSent = now;
             };
         };
 
-        // Horizontal movement (May want to later handle movement calculations on backend for security)
+        // Auto-increment horizontal position
         const interval = setInterval(() => {
             if (!raceStarted || raceFinished) return;
             setX(prevX => prevX + moveXRef.current);
             sendMove();
         }, 16);
 
-        // Vertical movement
+        // Handle vertical movement from keys
         const handleMovement = (e) => {
             if (!raceStarted || raceFinished) return;
-
             setY(prevY => {
                 let newY = prevY;
                 if (e.key === "ArrowUp" || e.key === "w") newY = Math.max(0.75, prevY - moveYRef.current);
@@ -286,21 +305,21 @@ function GameCanvas({ws, userEmail, userX, userY, setX, setY, players, raceStart
                 return newY;
             });
             sendMove();
-        };      
+        };
 
         const canvas = canvasRef.current;
-        canvas.tabIndex = 0;
-        canvas.focus();
+        if (canvas) {
+            canvas.tabIndex = 0;
+            canvas.focus();
+        };
         window.addEventListener("keydown", handleMovement);
 
         return () => {
             clearInterval(interval);
             window.removeEventListener("keydown", handleMovement);
         };
-    // eslint-disable-next-line
-    }, [userEmail, ws, raceStarted, raceFinished]);   
+    }, [userEmail, ws, raceStarted, raceFinished, spriteType, setX, setY]);
 
-    // Render the canvas
     return (
         <div style={{height: "80vh", width: "70vw"}}>
             <canvas
@@ -308,7 +327,7 @@ function GameCanvas({ws, userEmail, userX, userY, setX, setY, players, raceStart
                 style={{display: "block", border: "5px solid black", imageRendering: "pixelated"}}
             />
         </div>
-    );    
+    );
 };
 
 export default GameCanvas;

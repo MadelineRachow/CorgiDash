@@ -24,8 +24,7 @@ function GamePage({supabase}) {
     const [raceFinished, setRaceFinished] = useState(null);
     const [leaderboard, setLeaderboard] = useState([]);
     const [objects, setObjects] = useState([]);
-    const [corgiSkin, setCorgiSkin] = useState("");
-    // const [corgiSkins, setCorgiSkins] = useState([]);
+    const [corgiSkins, setCorgiSkins] = useState([]);
     const [objectCounts, setObjectCounts] = useState([]);
  
     function returnToLobby() {
@@ -43,9 +42,6 @@ function GamePage({supabase}) {
                 console.log("No session found.");
                 return;
             };
-
-            const {data} = await supabase.auth.getUser();
-            if (data?.user) setCorgiSkin(data.user.user_metadata?.corgiSkin || "");
 
             // Extract the JWT token for authentication the WebSocket connection
             const email = session.user.email;
@@ -89,12 +85,11 @@ function GamePage({supabase}) {
                 };
                 if (message.type === "object_counts") {
                     setObjectCounts(message.counts);
-                    console.log(message.counts)
                 };
-                // if (message.type === "corgi_skins") {
-                //     setCorgiSkins(message.players);
-                //     console.log(message.players)
-                // };
+                if (message.type === "corgi_skins") {
+                    setCorgiSkins(message.players);
+                    console.log(message.players)
+                };
             };
 
             // Websocket close event handler
@@ -215,7 +210,7 @@ function GamePage({supabase}) {
                 raceStarted={raceStarted}
                 raceFinished={raceFinished}
                 objects={objects}
-                corgiSkin={corgiSkin}
+                corgiSkins={corgiSkins}
             />
         </div>
     );    

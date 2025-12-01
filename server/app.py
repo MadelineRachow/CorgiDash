@@ -30,12 +30,12 @@ room_last_leaderboard_update: dict[str, float] = {}
 room_objects = {}
 room_locks: dict[str, asyncio.Lock] = {}
 
-async def update_player_position(room_id, email, x, y, username):
+async def update_player_position(room_id, email, x, y, username, sprite_type):
     if room_id not in rooms or len(rooms[room_id]) == 0:
         return
     
     # Update player positions and leaderboard
-    player_positions.setdefault(room_id, {})[email] = {"x": x, "y": y, "email": email, "username": username}
+    player_positions.setdefault(room_id, {})[email] = {"x": x, "y": y, "email": email, "username": username, "spriteType": sprite_type}
 
     ws1 = getattr(app.state, "leaderboard_ws", None)
     ws2 = getattr(app.state, "generator_ws", None)
@@ -196,7 +196,7 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
                 assigned_y = y
                 break
         # player_positions.setdefault(room_id, {})[user_email] = {"x": 0.0, "y": assigned_y, "username": username}
-        await update_player_position(room_id, user_email, 0.0, assigned_y, username)
+        await update_player_position(room_id, user_email, 0.0, assigned_y, username, sprite_type="walk")
         await manager.broadcast_message(room_id, json.dumps({"type": "state_update", "players": player_positions[room_id]}))
         if room_id in leaderboards:
             await manager.broadcast_message(room_id, json.dumps({"type": "leaderboard", "players": leaderboards[room_id]}))
@@ -230,8 +230,9 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
                     email = message.get("email")
                     x = message.get("x") 
                     y = message.get("y")
+                    sprite_type = message.get("spriteType")
                     if email is not None and x is not None and y is not None:
-                        await update_player_position(room_id, email, x, y, username)
+                        await update_player_position(room_id, email, x, y, username, sprite_type)
                     await manager.broadcast_message(room_id, json.dumps({"type": "state_update", "players": player_positions[room_id]}))
                     if room_id in leaderboards:
                         await manager.broadcast_message(room_id, json.dumps({"type": "leaderboard", "players": leaderboards[room_id]}))
