@@ -98,16 +98,21 @@ p, li, button, input {
   border-radius: 30px;
   height: 450px;
   width: 850px;
+  display: flex;              /* make it a flex container */
+  flex-direction: column;     /* stack children vertically */
+  justify-content: center;    /* center children vertically */
+  align-items: center;
+}
+
+.background-rect > * {
+  transform: translateY(-12.5%); 
 }
 
 .lobby-user-info {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -107%);
   display: flex;
   justify-content: center;
   align-items: center; 
+  margin-bottom: -60px;
 }
 
 .lobby-username {
@@ -127,8 +132,8 @@ p, li, button, input {
   background-size: 320px 64px; 
   image-rendering: pixelated;
   transform: scale(3);       
-  margin-left: 30px;
   margin-bottom: 50px;  
+  margin-right: 40px;
 }
 
 .buttons {
@@ -136,10 +141,6 @@ p, li, button, input {
   flex-direction: column;
   align-items: center; 
   gap: 15px;
-}
-
-.lobby-buttons {
-  transform: translateY(65%);
 }
 
 .button-row {
@@ -183,13 +184,31 @@ button:hover {
   width: 350px;
 }
 
+.corner-button {
+  top: 0;
+  left: 0;
+  transform: translate(530px, 225px);
+  width: 275px;
+}
+
 .input-field {
   width: 560px;
 }
 
+.big-input-field {
+  width: 710px;
+}
+
 .submit-button {
   width: 140px;
+}
+
+.login-button {
   height: 155px;
+}
+
+.signup-button {
+  height: 240px;
 }
 
 input {

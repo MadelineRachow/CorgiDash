@@ -6,6 +6,7 @@ import LobbyPage from "./LobbyPage";
 import CustomizePage from "./CustomizePage";
 import GamePage from "./GamePage";
 import HelpPage from "./HelpPage";
+import BackgroundCanvas from "./Background";
 import './App.css';
 
 const supabaseURL = process.env.REACT_APP_SUPABASE_URL;
@@ -49,6 +50,7 @@ function App() {
     return (
         <Router>
             <img src="/assets/CorgiDash.png" className="corgidash-title" alt=""/>
+            <BackgroundCanvas/>
             <Routes>
                 <Route path="/login" element={user ? <Navigate to="/lobby" replace/> : <LoginPage supabase={supabase}/>}/>
                 <Route path="/createaccount" element={user ? <Navigate to="/lobby" replace/> : <CreateAccountPage supabase={supabase}/>}/>

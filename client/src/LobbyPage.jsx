@@ -40,7 +40,6 @@ function LobbyPage({supabase}) {
     
     return (
         <div>
-            <BackgroundCanvas/>
             <div className="background-rect">
                 <div className="lobby-user-info">
                     <h3 className="lobby-username">{username}</h3>

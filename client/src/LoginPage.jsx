@@ -31,7 +31,7 @@ function LoginPage({supabase}) {
                             <input className="input-field" type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)}/>
                             <input className="input-field" type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)}/>
                         </div>
-                        <button className="submit-button" onClick={handleLogin}>Login</button>
+                        <button className="submit-button login-button" onClick={handleLogin}>Login</button>
                     </div>
                     <div className="button-row">
                         <button className="small-button" onClick={createAccountButton}>Create Account</button>
@@ -71,12 +71,18 @@ function CreateAccountPage({supabase}) {
 
     return (
         <div>
-            <button onClick={backToLogin}>Back to login</button>
-            <h3>Create an account!</h3>
-            <input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)}/>
-            <input type="username" placeholder="Username" value={username} onChange={e => setUsername(e.target.value)}/>
-            <input type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)}/>
-            <button onClick={handleSignUp}>Signup</button>
+            <button className="corner-button" onClick={backToLogin}>Back to Login</button>
+            <div className="background-rect">
+                <h3>Create an account!</h3>
+                <div className="button-row">
+                    <div className="input-col">
+                        <input className="input-field" type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)}/>
+                        <input className="input-field" type="username" placeholder="Username" value={username} onChange={e => setUsername(e.target.value)}/>
+                        <input className="input-field" type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)}/>
+                    </div>
+                    <button className="submit-button signup-button" onClick={handleSignUp}>Signup</button>
+                </div>
+            </div>
         </div>
     );    
 };
@@ -99,10 +105,14 @@ function ForgotPasswordPage({supabase}) {
 
     return (
         <div>
-            <button onClick={backToLogin}>Back to login</button>
-            <h3>Password recovery!</h3>
-            <input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)}/>
-            <button onClick={handleForgotPassword}>Reset password</button>
+            <button className="corner-button" onClick={backToLogin}>Back to Login</button>
+            <div className="background-rect">
+                <h3>Password recovery!</h3>
+                <div className="input-col">
+                    <input className="input-field big-input-field" type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)}/>
+                    <button className="big-button" onClick={handleForgotPassword}>Reset password</button>
+                </div>
+            </div>
         </div>
     );    
 };
@@ -125,9 +135,13 @@ function ResetPasswordPage({supabase}) {
 
     return (
         <div>
+            <div className="background-rect">
             <h3>Reset password</h3>
-            <input type="password" placeholder="New password" value={newPassword} onChange={e => setNewPassword(e.target.value)}/>
-            <button onClick={handleResetPassword}>Set new password</button>
+            <div className="input-col">
+                <input className="input-field big-input-field" type="password" placeholder="New password" value={newPassword} onChange={e => setNewPassword(e.target.value)}/>
+                <button className="big-button" onClick={handleResetPassword}>Set new password</button>
+            </div>
+            </div>
         </div>
     );      
 
